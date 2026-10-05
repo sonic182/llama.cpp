@@ -5,12 +5,8 @@ description: Guided workflow for adding a new model architecture to llama.cpp. U
 
 # Add a new model architecture to llama.cpp
 
-This skill walks a contributor through adding a new model architecture. AI-generated code is permitted in this project, so you may write full implementations for the steps below rather than only pointing at patterns - but follow `AGENTS.md`'s AI usage policy throughout:
+This skill walks through adding a new model architecture. Write full implementations for the steps below. Follow the code standards in `AGENTS.md` throughout:
 
-- The contributor is 100% responsible for every line, however it was produced. They must be able to explain and defend any part of it to a reviewer. Check in with them as you go (don't silently generate everything and hand over a finished diff) so they actually absorb what was written.
-- Before writing code, make sure the contributor owns the design choices for this architecture (which reference model to follow, how non-standard bits like RoPE variants or MoE routing should be handled) - AI accelerates a design the contributor has already made, it doesn't make the design for them.
-- Disclosure is mandatory: any AI-meaningful contribution must be disclosed per the PR template. Remind the contributor of this before they open the PR.
-- Never write the PR description, commit message, GitHub issue/discussion post, or reviewer replies - those must come from the contributor. If asked to commit on their behalf, use `Assisted-by:` (never `Co-authored-by:`) and only after explicit confirmation.
 - If the requested change looks large or introduces a new pattern not covered here, pause and tell the user this kind of change is likely to need prior discussion with maintainers before a PR.
 - Keep the PR self-contained. If the work would require a lot of unconventional changes outside the new model file(s) (e.g. touching shared graph-building code, the sampler, or core APIs in ways other models don't), STOP and tell the contributor to open a discussion/issue first - invasive or excessive changes get closed without full review.
 - Do not bundle unrelated work into this PR - see Step 4 and Step 5 below for the specifics on multimodal and chat-template/parsing work.
@@ -23,7 +19,7 @@ Before starting, read `CONTRIBUTING.md`, `AGENTS.md` and `docs/development/HOWTO
 Ask the contributor:
 1. Which model (HF repo id or name)? Is it text-only or does it have a multimodal (vision/audio) encoder?
 2. Do they already have the HF `config.json`/weights available locally?
-3. Have they checked for an existing PR/issue on this model? Suggest `gh search issues "<model name>"` and `gh search prs "<model name>"` in the `ggml-org/llama.cpp` repo. If an existing PR covers it, the contributor should comment there and collaborate rather than open a duplicate (per CONTRIBUTING.md's AI Usage Policy).
+3. Have they checked for an existing PR/issue on this model? Suggest `gh search issues "<model name>"` and `gh search prs "<model name>"` in the `ggml-org/llama.cpp` repo. If an existing PR covers it, the contributor should comment there and collaborate rather than open a duplicate.
 4. What existing supported architecture is this model closest to (e.g. "Llama-like with sliding window", "MoE like DBRX", "BERT-style encoder")?
 
 If the contributor doesn't know the closest reference architecture, you may grep `conversion/*.py` and `src/models/*.cpp` for architectures with a similar config shape (layer count, head count, MoE expert count, norm placement) and suggest 1-2 candidates - but let the contributor confirm the choice rather than picking one yourself; this choice is a design decision they need to own.
@@ -93,7 +89,3 @@ Reference: `examples/model-conversion/README.md`.
 ## Before opening a PR
 
 - Run the `code-review` skill on the diff first - it catches the convention and scope issues reviewers flag most often, and it's recommended to do this locally before pushing the PR.
-- Confirm the contributor can explain every changed line to a reviewer and is prepared to be asked about any of it - this is required regardless of how much of the code was AI-generated.
-- Confirm they did a comprehensive manual review of the full diff, not just a skim.
-- Fill in the AI-disclosure section of `.github/pull_request_template.md` describing how AI was used (do not omit or understate this).
-- Do not write the PR description, commit message, GitHub issue/discussion text, or any reviewer replies yourself - the contributor writes these.
