@@ -35,7 +35,8 @@ Evidence files:
 
 ## Phase 2 - Thread count, affinity, and SMT
 
-- [ ] Record the logical CPU to physical-core/SMT-sibling map with host topology tools. Do not assume CPU numbering reflects core topology.
+- [x] Record the logical CPU to physical-core/SMT-sibling map with host topology tools. `lscpu -e`: core0={0,1}, core1={2,3}, core2={4,5}, core3={6,7}; one NUMA node, 4 MiB shared L3, per-core L2.
+- [ ] Sweep tooling exists: `scripts/evals/phase2-affinity-sweep.sh` (14 thread/mask configs x 3 alternating rounds, pp128/pp512 and tg128@512, JSON plus `/usr/bin/time -v` output in `scripts/evals/qwen3-0.6b-phase2/`). `--cpu-strict 1` pinning was confirmed on CPUs 0,2,4,6. The first run was stopped after a partial round 1; re-run it on an otherwise idle host. `--poll` has no effect in the OpenMP build, so it is not swept here (see Phase 12.1).
 - [x] Initial unpinned baseline sweep already covers 1, 2, 4, 6, and 8 threads.
 - [ ] Repeat 4, 6, and 8 threads under controlled warmup/paired runs, and add 3, 5, and 7 threads for pp and decode.
 - [ ] Compare unpinned execution with affinity layouts for physical cores first, then physical cores plus selected SMT siblings, then all logical CPUs.
@@ -108,6 +109,43 @@ Evidence files:
 - [ ] Revisit JIT only if there are a few stable shapes and CPU variants where generated code can remove meaningful generic overhead.
 - [ ] If justified, isolate the JIT implementation behind an optional x86 build feature, retain the generic fallback, cache generated code by shape and ISA, and measure compile/startup cost separately from steady-state inference.
 - [ ] Compare the JIT path against the best static kernel with correctness, quality, memory, startup, prefill, and decode measurements.
+
+## Phase 12 - Synchronization and context-switch reduction (from static code analysis)
+
+Source: read-only code analysis, nothing executed. Verified-by-reading facts are marked (V); gain estimates and the barrier count are speculation (S) until measured.
+
+Findings:
+
+- (V) `ggml_graph_compute_thread` puts a barrier after every non-empty node (`ggml/src/ggml-cpu/ggml-cpu.c:3150`); the repack `forward_mul_mat` adds a second barrier after activation quantization (`ggml/src/ggml-cpu/repack.cpp:4749`).
+- (V) In decode (`ne11==1`) only thread 0 quantizes the activation; the other threads wait (`repack.cpp:4697-4705`). Q/K/V and up/gate each re-quantize the same input (`repack.cpp:4693-4706`).
+- (V) With `GGML_OPENMP=ON`, `--poll` and the persistent pool are compiled out (`ggml-cpu.c:3170-3306`); each graph compute forks a `#pragma omp parallel` region (`ggml-cpu.c:3413-3435`). With the default cpumask of zero the affinity/priority syscalls at `ggml-cpu.c:3424-3430` are skipped.
+- (S) About 30 barriers per layer, roughly 800+ per token, consistent with the unresolved 9.97% OpenMP frame in the tg128 profile.
+
+Candidates, in suggested order (each is a separate experiment under the Goal and rules gate):
+
+- [ ] 12.1 A/B the runtime, config only: `GGML_OPENMP=OFF` build with `--poll`, `-C`, `--cpu-strict` versus the libgomp build. The built-in pool uses persistent threads and a single-atomic spin barrier (`ggml-cpu.c:585-610`) and avoids per-token fork/join and the double barrier at region end (`ggml-cpu.c:3161`). Also try `OMP_WAIT_POLICY=active` / `GOMP_SPINCOUNT` on the existing build (the `KMP_BLOCKTIME` setenv at `ggml-cpu.c:3896-3909` only affects LLVM libomp, and libgomp reads its environment at load time, so an in-process setenv would be too late; the libgomp point is not verified in this repo). Risk: spin barriers with 6 threads on 8 logical CPUs plus host services may get worse. Metrics: tg128@512 and pp512 paired runs, context switches and migrations via `/usr/bin/time -v` or `perf stat`.
+- [ ] 12.2 Finer dynamic chunks: change `nth*4` to `nth*8` and `nth*16` at `repack.cpp:4714` and `ggml-cpu.c:1427` (minimum chunk `NB_COLS=8`). One-line sweep, low risk; barrier wait is probably straggler time from uneven SMT speeds. Estimate +-1-3% decode (S).
+- [ ] 12.3 Fuse ffn up + gate + swiglu in `ggml_cpu_try_fuse_ops` (`ggml-cpu.c:3061`) following the RMS_NORM+MUL pattern; `build_ffn` emits up, gate, then GLU in sequence (`src/llama-graph.cpp:1795,1817`). Saves about 3 barriers, 1 quantization and the intermediate round trip per layer. First verify the three nodes are adjacent in the final graph order. A/B against `GGML_CPU_DISABLE_FUSION=1` (`ggml-cpu.c:3922`) plus PPL/logits check. Estimate 1-3% decode, <1% prefill (S). Overlaps Phase 8.
+- [ ] 12.4 Remove the second barrier per matmul in decode: each thread quantizes the single row into a private slice (larger `work_size`, `repack.cpp:4557-4563`) and replace the thread-0 `current_chunk` reset plus barrier (`repack.cpp:4744-4749`, `ggml-cpu.c:1373-1378`) with ring-buffered counters reset one node ahead. Removes roughly 7 barriers per layer (~190 per token, S). High risk (race-prone counter lifetime); validate with bitwise logits comparison before any timing. Only attempt if 12.1-12.3 leave a material barrier cost.
+- [ ] 12.5 Share activation quantization across Q/K and across up/gate (e.g. a "wdata holds quantized src1 = X" marker with a dirty flag). `build_attn` expands q, v, k adjacently (`llama-graph.cpp:2887-2889`), but attn_v is often Q6_K in Q4_K_M and not repacked on x86, so only Q+K or up+gate share cleanly. The quantization itself is well under 1% (S); the value is the barrier removal in 12.4. Depends on 12.4.
+- [ ] 12.6 Hoist affinity/priority syscalls (`ggml-cpu.c:3424-3430`) behind a thread-local "last applied" mask. No effect on default runs; only saves ~6 syscalls per token with `-C`/`--cpu-strict`, under 0.3% (S). Do only if Phase 2 selects a pinned layout.
+
+## Phase 13 - Copy reduction (from static code analysis)
+
+Verified by reading: steady-state decode is already close to zero-copy.
+
+- (V) Qwen3 inserts no `ggml_cont`/`ggml_cpy`/`ggml_dup` nodes (`src/models/qwen3.cpp` builds views and reshapes only); with flash attention the only cont is the non-flash V transpose (`src/llama-graph.cpp:2720`; FA path `:2636-2678`).
+- (V) KV writes are `set_rows` with a required F32 to F16 conversion (`src/llama-kv-cache.cpp:1350`).
+- (V) Weights not in CPU_REPACK (Q6_K, norms) are already mmap-backed via `buffer_from_host_ptr` (`src/llama-model.cpp:1836-1843`); repacked Q4_K must be copied (`repack_buffer_set_tensor`, `repack.cpp:5150`).
+- (V) The CPU work buffer is grow-only (`ggml/src/ggml-cpu/ggml-cpu.cpp:173-184`), so there is no per-token allocation. (S) With a single CPU backend there should be no scheduler input copies; the split count was not confirmed.
+
+Candidates:
+
+- [ ] 13.1 Confirm scheduler split count and graph node count for Qwen3 decode before dropping the scheduler-copy hypothesis.
+- [ ] 13.2 Logits pointer: return a pointer into the compute buffer instead of the ~608 KB `tensor_get_async` memcpy (`src/llama-context.cpp:1940`) when the buffer is host-resident. At most ~0.2% of decode (S), no effect on prefill, and it changes `llama_get_logits` lifetime semantics; low priority.
+- [ ] 13.3 Persistent repacked layout (repacked cache file or mmap-able GGUF type) would remove the ~205 MiB anonymous copy and startup repack, but does not change steady-state speed and conflicts with the no-model-format-change constraint; startup/RSS only.
+- [ ] 13.4 `madvise(MADV_HUGEPAGE)` on the repack buffer (`repack.cpp:5168`); same experiment as Phase 10 THP item, check the system THP setting first.
+- Likely no-ops for this workload (do not pursue unless new evidence appears): scheduler split copies, cont/cpy/dup removal, `--poll` with OpenMP, `buffer_from_host_ptr` (already used), plan/work-buffer caching, logits pointer for prefill.
 
 ## Completion criteria
 
