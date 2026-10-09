@@ -2,10 +2,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/common/rust-shim ${CMAKE_BINARY_DIR}/comm
 
 find_program(CARGO_EXECUTABLE cargo REQUIRED)
 
-set(LLAMA_RUST_CARGO_FEATURES "")
-if (LLAMA_OPENSSL)
-    list(APPEND LLAMA_RUST_CARGO_FEATURES --features llama-http/tls)
-endif()
+set(LLAMA_RUST_CARGO_FEATURES --features llama-http/tls)
 
 # llama-sys always links libllama as a shared library, so the binaries cannot link against static libs
 set(LLAMA_RUST_CARGO_EXCLUDES "")

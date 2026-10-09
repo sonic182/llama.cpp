@@ -52,10 +52,7 @@ target_link_libraries(${TARGET} PUBLIC server-context llama-ui cpp-httplib ${CMA
 
 add_dependencies(${TARGET} llama-ui-assets)
 
-if (LLAMA_RUST_HTTP)
-    target_compile_definitions(${TARGET} PRIVATE LLAMA_RUST_HTTP)
-    target_link_libraries(${TARGET} PRIVATE llama-http)
-endif()
+target_link_libraries(${TARGET} PRIVATE llama-http)
 
 if(LLAMA_TOOLS_INSTALL)
     install(TARGETS ${TARGET} LIBRARY)

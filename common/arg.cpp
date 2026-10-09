@@ -3575,7 +3575,7 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
     ).set_examples({LLAMA_EXAMPLE_SERVER}).set_env("LLAMA_ARG_THREADS_HTTP"));
     add_opt(common_arg(
         {"--http-workers"}, "N|auto",
-        "number of async workers of the Rust HTTP transport, either an exact number or 'auto' (default: auto, ignored unless built with LLAMA_RUST_HTTP)",
+        "number of async workers of the Rust HTTP transport, either an exact number or 'auto' (default: auto)",
         [](common_params & params, const std::string & value) {
             if (value == "auto") {
                 params.http_workers = -1;

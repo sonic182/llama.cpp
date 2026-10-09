@@ -10,7 +10,7 @@ def run(driver: str, corpus: str, out_path: str) -> None:
     start = 0
     while start < len(lines):
         proc = subprocess.run(
-            [driver],
+            driver.split(),
             input=("\n".join(lines[start:]) + "\n").encode("utf-8"),
             capture_output=True,
         )
