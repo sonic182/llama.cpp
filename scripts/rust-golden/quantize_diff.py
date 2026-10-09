@@ -187,7 +187,9 @@ def run(binary, out, lib_dir):
     if lib_dir:
         env["LD_LIBRARY_PATH"] = str(Path(lib_dir).resolve())
     results = []
-    with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR", Path.home() / ".cache")) as tmp:
+    tmp_root = Path(os.environ.get("TMPDIR", Path.home() / ".cache"))
+    tmp_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=tmp_root) as tmp:
         work = Path(tmp)
         shutil.copy(FIXTURES / MODEL, work / MODEL)
         for name in IMATRIX_FILES:
