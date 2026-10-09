@@ -1,22 +1,18 @@
 use std::env;
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 const LIBS: &[&str] = &["llama", "ggml", "ggml-base", "llama-ext-c"];
+const BINDINGS: &str = "src/bindings.rs";
+const HASH_PREFIX: &str = "// input-hash: ";
+const INPUT_PREFIX: &str = "// input: ";
+const REGENERATE: &str = "cargo build -p llama-sys --features bindgen";
 
 fn main() {
     let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let root = manifest.join("../..").canonicalize().unwrap();
 
     println!("cargo:rerun-if-env-changed=LLAMA_LIB_DIR");
-    println!("cargo:rerun-if-changed=wrapper.h");
-    println!(
-        "cargo:rerun-if-changed={}",
-        root.join("include/llama.h").display()
-    );
-    println!(
-        "cargo:rerun-if-changed={}",
-        root.join("common/rust-shim/llama_ext_c.h").display()
-    );
 
     let lib_dir = env::var_os("LLAMA_LIB_DIR")
         .map(PathBuf::from)
@@ -34,24 +30,122 @@ fn main() {
     }
     println!("cargo:lib_dir={}", lib_dir.display());
 
-    let bindings = bindgen::Builder::default()
-        .header(manifest.join("wrapper.h").to_str().unwrap())
-        .clang_args([
-            "-x".to_string(),
-            "c".to_string(),
-            format!("-I{}", root.join("include").display()),
-            format!("-I{}", root.join("ggml/include").display()),
-            format!("-I{}", root.join("common/rust-shim").display()),
-        ])
-        .allowlist_function("(llama|ggml|gguf)_.*")
-        .allowlist_type("(llama|ggml|gguf)_.*")
-        .allowlist_var("(LLAMA|GGML|GGUF)_.*")
-        .constified_enum_module("(llama|ggml|gguf)_.*")
-        .derive_default(true)
-        .layout_tests(false)
-        .generate()
-        .expect("bindgen failed");
+    #[cfg(feature = "bindgen")]
+    generate::run(&manifest, &root);
 
-    let out = PathBuf::from(env::var("OUT_DIR").unwrap());
-    bindings.write_to_file(out.join("bindings.rs")).unwrap();
+    check(&manifest, &root);
+}
+
+fn fnv1a(hash: u64, bytes: &[u8]) -> u64 {
+    bytes.iter().fold(hash, |h, b| {
+        (h ^ u64::from(*b)).wrapping_mul(0x100_0000_01b3)
+    })
+}
+
+fn input_hash(root: &Path, inputs: &[String]) -> u64 {
+    inputs.iter().fold(0xcbf2_9ce4_8422_2325, |h, rel| {
+        let content = fs::read(root.join(rel)).unwrap_or_else(|e| {
+            panic!("llama-sys: cannot read {rel}: {e}; regenerate with `{REGENERATE}`")
+        });
+        fnv1a(fnv1a(h, rel.as_bytes()), &content)
+    })
+}
+
+fn check(manifest: &Path, root: &Path) {
+    let path = manifest.join(BINDINGS);
+    println!("cargo:rerun-if-changed={}", path.display());
+    let text = fs::read_to_string(&path).unwrap_or_else(|e| {
+        panic!(
+            "llama-sys: cannot read {}: {e}; regenerate with `{REGENERATE}`",
+            path.display()
+        )
+    });
+
+    let mut stored = None;
+    let mut inputs = Vec::new();
+    for line in text.lines().take_while(|l| l.starts_with("//")) {
+        if let Some(hash) = line.strip_prefix(HASH_PREFIX) {
+            stored = Some(hash.trim().to_string());
+        } else if let Some(input) = line.strip_prefix(INPUT_PREFIX) {
+            inputs.push(input.trim().to_string());
+        }
+    }
+    for input in &inputs {
+        println!("cargo:rerun-if-changed={}", root.join(input).display());
+    }
+
+    let actual = format!("{:016x}", input_hash(root, &inputs));
+    if stored.as_deref() != Some(actual.as_str()) {
+        panic!(
+            "llama-sys: {} is out of date with the C headers it was generated from; regenerate it with `{REGENERATE}` (needs libclang) and commit it",
+            path.display()
+        );
+    }
+}
+
+#[cfg(feature = "bindgen")]
+mod generate {
+    use super::*;
+    use std::collections::BTreeSet;
+    use std::sync::{Arc, Mutex};
+
+    #[derive(Debug)]
+    struct Includes(Arc<Mutex<BTreeSet<PathBuf>>>);
+
+    impl bindgen::callbacks::ParseCallbacks for Includes {
+        fn include_file(&self, filename: &str) {
+            self.0.lock().unwrap().insert(PathBuf::from(filename));
+        }
+    }
+
+    pub fn run(manifest: &Path, root: &Path) {
+        let wrapper = manifest.join("wrapper.h");
+        let seen = Arc::new(Mutex::new(BTreeSet::from([wrapper.clone()])));
+
+        let bindings = bindgen::Builder::default()
+            .header(wrapper.to_str().unwrap())
+            .clang_args([
+                "-x".to_string(),
+                "c".to_string(),
+                format!("-I{}", root.join("include").display()),
+                format!("-I{}", root.join("ggml/include").display()),
+                format!("-I{}", root.join("common/rust-shim").display()),
+            ])
+            .allowlist_function("(llama|ggml|gguf)_.*")
+            .allowlist_type("(llama|ggml|gguf)_.*")
+            .allowlist_var("(LLAMA|GGML|GGUF)_.*")
+            .constified_enum_module("(llama|ggml|gguf)_.*")
+            .derive_default(true)
+            .layout_tests(false)
+            .parse_callbacks(Box::new(Includes(seen.clone())))
+            .generate()
+            .expect("bindgen failed");
+
+        let inputs: Vec<String> = seen
+            .lock()
+            .unwrap()
+            .iter()
+            .filter_map(|p| p.canonicalize().ok())
+            .filter_map(|p| {
+                p.strip_prefix(root)
+                    .ok()
+                    .map(|r| r.to_string_lossy().replace('\\', "/"))
+            })
+            .collect();
+
+        let mut text = format!(
+            "// Generated by `{REGENERATE}`. Do not edit.\n{HASH_PREFIX}{:016x}\n",
+            input_hash(root, &inputs)
+        );
+        for input in &inputs {
+            text.push_str(&format!("{INPUT_PREFIX}{input}\n"));
+        }
+        text.push('\n');
+        text.push_str(&bindings.to_string());
+
+        let path = manifest.join(BINDINGS);
+        if fs::read_to_string(&path).ok().as_deref() != Some(text.as_str()) {
+            fs::write(&path, text).unwrap();
+        }
+    }
 }

@@ -4,7 +4,7 @@ Opt-in Rust code for everything that is not inference. ggml and `src/` stay in C
 
 Crates:
 
-- `llama-sys`: bindgen bindings for `llama.h`, `ggml.h`, `ggml-backend.h`, `ggml-cpu.h`, `gguf.h` and the C shim `common/rust-shim/llama_ext_c.h`
+- `llama-sys`: bindgen bindings for `llama.h`, `ggml.h`, `ggml-backend.h`, `ggml-cpu.h`, `gguf.h` and the C shim `common/rust-shim/llama_ext_c.h`, committed in `llama-sys/src/bindings.rs`
 - `llama`: safe wrapper (backend, model, vocab)
 - `llama-http`: HTTP transport for `llama-server` (hyper + tokio), an rlib with a C ABI (`llama-http/include/llama_http.h`)
 - `llama-schema`: JSON schema to GBNF grammar (`llama-schema/include/llama_schema.h`), used by `json_schema_to_grammar` in `common/json-schema-to-grammar.cpp`; `build_grammar` still uses the C++ converter
@@ -18,7 +18,7 @@ Crates:
 
 ## Build
 
-Requires libclang (bindgen) and a Unix target.
+Requires a Unix target. The bindings are generated ahead of time, so a normal build does not run bindgen or need libclang. `llama-sys/build.rs` stores a hash of every header the bindings were generated from and fails the build when one of them changes; regenerate with `cargo build -p llama-sys --features bindgen` (needs libclang) and commit `llama-sys/src/bindings.rs`.
 
 ```sh
 cmake -B build-rust -DLLAMA_RUST=ON
