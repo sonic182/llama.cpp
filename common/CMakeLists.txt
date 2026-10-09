@@ -148,6 +148,18 @@ if (BUILD_SHARED_LIBS)
     set_target_properties(${TARGET} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
+if (LLAMA_RUST)
+    target_sources(${TARGET} PRIVATE rust-version.cpp rust-version.h)
+    if (BUILD_SHARED_LIBS)
+        target_link_libraries(${TARGET} PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,llama-rs>")
+    else()
+        target_link_libraries(${TARGET} PRIVATE llama-rs)
+    endif()
+    if (LLAMA_RUST_SCHEMA)
+        target_compile_definitions(${TARGET} PRIVATE LLAMA_RUST_SCHEMA)
+    endif()
+endif()
+
 target_link_libraries(${TARGET} PUBLIC  llama-common-base)
 target_link_libraries(${TARGET} PRIVATE cpp-httplib)
 

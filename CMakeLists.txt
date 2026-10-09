@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.14...3.28) # for add_link_options and implicit target directories.
 project("llama.cpp" C CXX)
+include(CMakeDependentOption)
 include(CheckIncludeFileCXX)
 
 ### llama.cpp version
@@ -145,6 +146,11 @@ option(LLAMA_OPENSSL    "llama: use openssl to support HTTPS" ON)
 option(LLAMA_SUBPROCESS "llama-common: use subprocess, required by server tools and server router mode" ${LLAMA_SUBPROCESS_DEFAULT})
 option(LLAMA_LLGUIDANCE "llama-common: include LLGuidance library for structured output in common utils" OFF)
 
+# rust
+option(LLAMA_RUST "llama: build the Rust workspace and its C shim" OFF)
+cmake_dependent_option(LLAMA_RUST_HTTP "llama: serve llama-server over the Rust HTTP transport" OFF "LLAMA_RUST" OFF)
+cmake_dependent_option(LLAMA_RUST_SCHEMA "llama: convert JSON schemas to grammars in Rust" OFF "LLAMA_RUST" OFF)
+
 
 # Required for relocatable CMake package
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-info.cmake)
@@ -235,6 +241,10 @@ add_subdirectory(src)
 #
 
 add_subdirectory(vendor)
+
+if (LLAMA_RUST)
+    add_subdirectory(rust)
+endif()
 
 if (LLAMA_BUILD_COMMON)
     add_subdirectory(common)

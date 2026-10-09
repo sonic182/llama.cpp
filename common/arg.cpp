@@ -2424,6 +2424,13 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_env("LLAMA_ARG_REPACK"));
     add_opt(common_arg(
+        {"--reclaim-mmap-source"},
+        "drop copied mmap source pages from RSS after they are copied into a separate buffer (Linux only)",
+        [](common_params & params) {
+            params.reclaim_mmap_source = true;
+        }
+    ).set_env("LLAMA_ARG_RECLAIM_MMAP_SOURCE"));
+    add_opt(common_arg(
         {"--no-host"},
         "bypass host buffer allowing extra buffers to be used",
         [](common_params & params) {
@@ -3566,6 +3573,21 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
             params.n_threads_http = value;
         }
     ).set_examples({LLAMA_EXAMPLE_SERVER}).set_env("LLAMA_ARG_THREADS_HTTP"));
+    add_opt(common_arg(
+        {"--http-workers"}, "N|auto",
+        "number of async workers of the Rust HTTP transport, either an exact number or 'auto' (default: auto, ignored unless built with LLAMA_RUST_HTTP)",
+        [](common_params & params, const std::string & value) {
+            if (value == "auto") {
+                params.http_workers = -1;
+                return;
+            }
+            const int n = std::stoi(value);
+            if (n < 1) {
+                throw std::invalid_argument("--http-workers must be 'auto' or a positive number");
+            }
+            params.http_workers = n;
+        }
+    ).set_examples({LLAMA_EXAMPLE_SERVER}).set_env("LLAMA_ARG_HTTP_WORKERS"));
     add_opt(common_arg(
         {"--cache-prompt"},
         {"--no-cache-prompt"},

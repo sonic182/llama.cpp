@@ -1,0 +1,13 @@
+[package]
+name = "llama-rs"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+llama-http = { path = "../llama-http" }
+llama-schema = { path = "../llama-schema" }

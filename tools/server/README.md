@@ -217,6 +217,7 @@ For the full list of features, please refer to [server's changelog](https://gith
 | `-to, --timeout N` | server read/write timeout in seconds (default: 3600)<br/>(env: LLAMA_ARG_TIMEOUT) |
 | `--sse-ping-interval N` | server SSE ping interval in seconds (-1 = disabled, default: 30)<br/>(env: LLAMA_ARG_SSE_PING_INTERVAL) |
 | `--threads-http N` | number of threads used to process HTTP requests (default: -1)<br/>(env: LLAMA_ARG_THREADS_HTTP) |
+| `--http-workers N\|auto` | number of async workers of the Rust HTTP transport, either an exact number or 'auto' (default: auto, ignored unless built with LLAMA_RUST_HTTP)<br/>(env: LLAMA_ARG_HTTP_WORKERS) |
 | `--cache-prompt, --no-cache-prompt` | whether to enable prompt caching (default: enabled)<br/>(env: LLAMA_ARG_CACHE_PROMPT) |
 | `--cache-reuse N` | min chunk size to attempt reusing from the cache via KV shifting, requires prompt caching to be enabled (default: 0)<br/>[(card)](https://ggml.ai/f0.png)<br/>(env: LLAMA_ARG_CACHE_REUSE) |
 | `--metrics` | enable prometheus compatible metrics endpoint (default: disabled)<br/>(env: LLAMA_ARG_ENDPOINT_METRICS) |

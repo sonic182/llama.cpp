@@ -14,6 +14,11 @@
 #include <future>
 #include <regex>
 
+#ifdef __linux__
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+
 static const size_t kiB = 1024;
 static const size_t MiB = 1024*kiB;
 static const size_t GiB = 1024*MiB;
@@ -540,6 +545,7 @@ llama_model_loader::llama_model_loader(
         bool check_tensors,
         bool no_alloc,
         bool load_mtp,
+        bool reclaim_mmap_source,
         const llama_model_kv_override * param_overrides_p,
         const llama_model_tensor_buft_override * param_tensor_buft_overrides_p)
         : metadata(meta), set_tensor_data(set_tensor_data), set_tensor_data_ud(set_tensor_data_ud) {
@@ -834,6 +840,7 @@ llama_model_loader::llama_model_loader(
     this->check_tensors = check_tensors;
     this->no_alloc = no_alloc;
     this->load_mtp = load_mtp;
+    this->reclaim_mmap_source = reclaim_mmap_source;
 }
 
 std::string llama_model_loader::get_arch_name() const {
@@ -1519,6 +1526,11 @@ bool llama_model_loader::load_all_data(
     // 64MB works well for NVMe drives
     const size_t buffer_size = alignment != 1 ? 64 * 1024 * 1024 + 2 * alignment : 1 * 1024 * 1024;
 
+#ifdef __linux__
+    const long page_size_query = reclaim_mmap_source ? sysconf(_SC_PAGESIZE) : -1;
+    const size_t reclaim_page_size = page_size_query > 0 ? (size_t) page_size_query : 0;
+#endif
+
     std::vector<ggml_backend_buffer_t> host_buffers;
     std::vector<ggml_backend_event_t> events;
     std::vector<void *> host_ptrs;
@@ -1668,6 +1680,17 @@ bool llama_model_loader::load_all_data(
                 mmap_used.second = std::max(mmap_used.second, weight->offs + n_size);
             } else {
                 ggml_backend_tensor_set(cur, data, 0, n_size);
+
+#ifdef __linux__
+                if (reclaim_mmap_source && use_mmap && lmlocks == nullptr && reclaim_page_size != 0) {
+                    const uintptr_t data_addr = (uintptr_t) data;
+                    const uintptr_t beg = (data_addr + reclaim_page_size - 1) & ~(reclaim_page_size - 1);
+                    const uintptr_t end = (data_addr + n_size) & ~(reclaim_page_size - 1);
+                    if (end > beg) {
+                        madvise((void *) beg, end - beg, MADV_DONTNEED);
+                    }
+                }
+#endif
             }
         } else {
             const auto & file = files.at(weight->idx);

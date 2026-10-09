@@ -4,7 +4,9 @@
 #include "server-common.h"
 #include "ui.h"
 
+#ifndef LLAMA_RUST_HTTP
 #include <cpp-httplib/httplib.h>
+#endif
 
 #include <functional>
 #include <future>
@@ -12,6 +14,7 @@
 #include <string>
 #include <thread>
 
+#ifndef LLAMA_RUST_HTTP
 //
 // HTTP implementation using cpp-httplib
 //
@@ -79,6 +82,7 @@ static bool origin_is_localhost(const std::string & origin) {
         return false;
     }
 }
+#endif
 
 // For Google Cloud Platform deployment compatibility
 struct gcp_params {
@@ -108,6 +112,9 @@ struct gcp_params {
     }
 };
 
+#ifdef LLAMA_RUST_HTTP
+#include "server-http-rust.inl"
+#else
 bool server_http_context::init(const common_params & params) {
     const gcp_params gcp;
 
@@ -747,6 +754,7 @@ void server_http_context::del(const std::string & path, const server_http_contex
         srv->Delete(full_path, callback);
     }
 }
+#endif
 
 //
 // Vertex AI Prediction protocol (AIP_PREDICT_ROUTE)

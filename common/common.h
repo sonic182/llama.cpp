@@ -581,6 +581,7 @@ struct common_params {
     bool check_tensors     = false; // validate tensor data
     bool no_op_offload     = false; // globally disable offload host tensor operations to device
     bool no_extra_bufts    = false; // disable extra buffer types (used for weight repacking)
+    bool reclaim_mmap_source = false; // drop copied mmap source pages from RSS (Linux only)
     bool no_host           = false; // bypass host buffer allowing extra buffers to be used
 
     bool single_turn       = false; // single turn chat conversation
@@ -624,6 +625,7 @@ struct common_params {
     int32_t timeout_write       = timeout_read;  // http write timeout in seconds
     int32_t sse_ping_interval   = 30;            // SSE ping interval in seconds
     int32_t n_threads_http      = -1;    // number of threads to process HTTP requests (TODO: support threadpool)
+    int32_t http_workers        = -1;    // async HTTP workers of the Rust transport (-1 = auto)
     int32_t n_cache_reuse       = 0;     // min chunk size to reuse from the cache via KV shifting
     bool    cache_prompt        = true;  // whether to enable prompt caching
     bool    cache_idle_slots    = true;  // save and clear idle slots upon starting a new task

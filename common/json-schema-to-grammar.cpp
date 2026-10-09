@@ -3,6 +3,10 @@
 #include "trie.h"
 #include "unicode.h"
 
+#ifdef LLAMA_RUST_SCHEMA
+#include "llama_schema.h"
+#endif
+
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -998,11 +1002,28 @@ std::string json_schema_to_grammar(const common_json & schema, bool force_gbnf) 
 #else
     (void)force_gbnf;
 #endif // LLAMA_USE_LLGUIDANCE
+#ifdef LLAMA_RUST_SCHEMA
+    const std::string text = schema.dump();
+    llama_schema_result result;
+    const int rc = llama_schema_to_grammar(text.data(), text.size(), &result);
+    std::string grammar(result.grammar.data ? result.grammar.data : "", result.grammar.len);
+    std::string error(result.error.data ? result.error.data : "", result.error.len);
+    std::string warnings(result.warnings.data ? result.warnings.data : "", result.warnings.len);
+    llama_schema_result_free(&result);
+    if (rc != 0) {
+        throw std::invalid_argument(error);
+    }
+    if (!warnings.empty()) {
+        fprintf(stderr, "WARNING: JSON schema conversion was incomplete: %s\n", warnings.c_str());
+    }
+    return grammar;
+#else
     try {
         return json_schema_to_grammar(common_chat_schema_from_json(schema));
     } catch (const std::runtime_error & e) {
         throw std::invalid_argument(std::string("JSON schema conversion failed:\n") + e.what());
     }
+#endif
 }
 
 std::string json_schema_to_grammar(const common_chat_schema_document & schema) {
