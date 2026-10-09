@@ -102,10 +102,10 @@ Order (from the phase 3 plan file), each piece with differential test C++ vs Rus
 - [-] 3.4 jinja (`common/jinja`, 6.3k): stays in C++ (user decision). A Rust port would be a rewrite with no gain: no crate keeps the C++ behavior (input-marked string parts against special-token injection, usage stats for `caps_get`, the llama.cpp quirks and error texts), so `minijinja` would change rendering for the templates in `models/templates`.
 - [-] 3.5 `peg-parser.cpp`, `chat-peg-parser.cpp`, `build_grammar`: skipped, stays in C++ (user decision).
 - [-] 3.6 chat cluster (`chat.cpp`, `chat-diff-analyzer.cpp`, `chat-auto-parser*`, `common/parsers/`): skipped, stays in C++ (user decision).
-- [ ] 3.7 samplers: `reasoning-budget`, `llguidance`, `sampling.cpp` (`extern "C"` vtable). Default: `common_params_sampling` stays in C++; ask when reached.
+- [x] 3.7 samplers: `reasoning-budget` and `llguidance` in Rust; `sampling.cpp` and `common_params_sampling` stay in C++ (user decision).
   - [x] `reasoning-budget`: `rust/llama-sampling` (vtable, Aho-Corasick, UTF-8 check, trace sink); `common/reasoning-budget.cpp` (310 to 56 lines) forwards; `common_reasoning_budget_get_end_match` now returns `llama_tokens` by value. Oracle: `test-reasoning-budget` unchanged apart from that type; server pytest non-slow 376 passed, 4 skipped.
   - [x] `llguidance`: `llama-sampling/src/llg.rs` behind the cargo feature `llama-rs/llguidance` (set by `LLAMA_LLGUIDANCE`), over the `llguidance` 1.0.1 crate; the `ExternalProject` clone and its separate static lib are gone, `common/llguidance.cpp` (260 to 22 lines) forwards. Oracle: `test-grammar-llguidance` passes.
-  - [ ] `sampling.cpp` (`common_sampler`): ask the user.
+  - [-] `sampling.cpp` (`common_sampler`): stays in C++ (user decision). It is the per-token path and mostly calls libllama, so a port brings no concrete gain.
 
 The ~100 ggml/gguf calls in `common/` (`common.cpp`: 30, `arg.cpp`: 26, `imatrix-loader.cpp`: 22, `fit.cpp`: 20) go through `llama-sys`.
 
@@ -155,7 +155,7 @@ Read-only (behavior reference): `tools/server/server-queue.h`, `tools/server/ser
 
 ## Next step
 
-3.2 close-out: done. The server pytest on the Rust HTTP build passes the non-slow suite (376 passed, 4 skipped, 199 slow deselected). Boundary step closed: `common_params_model` and `common_download_callback` stay in C++ (decision 7). Timeouts closed by moving the client to hyper (decision 8). Rust HTTP and the Rust schema converter are now the only paths, and their C++ twins are deleted (the `build_grammar` converter stays until 3.5). 3.3 `imatrix-loader` + `quantize` is done. Next: pending decision 1 (jinja, PEG and chat) before 3.4.
+3.2 close-out: done. The server pytest on the Rust HTTP build passes the non-slow suite (376 passed, 4 skipped, 199 slow deselected). Boundary step closed: `common_params_model` and `common_download_callback` stay in C++ (decision 7). Timeouts closed by moving the client to hyper (decision 8). Rust HTTP and the Rust schema converter are now the only paths, and their C++ twins are deleted (the `build_grammar` converter stays in C++). 3.3 `imatrix-loader` + `quantize` is done. Phase 3 is closed: jinja, PEG and chat (3.4-3.6) stay in C++, 3.7 moved `reasoning-budget` and `llguidance` to `rust/llama-sampling`, and `sampling.cpp` stays in C++. Next: Phase 4, starting with pending decisions 3 and 4 (`server-task.h` structs, `server_slot`, `arg.cpp`).
 
 ## Pending decisions (asked when the phase reaches them)
 
