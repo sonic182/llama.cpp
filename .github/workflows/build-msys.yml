@@ -2,7 +2,6 @@ name: CI (msys)
 
 on:
   workflow_dispatch:
-  # run once every week
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref && github.ref || github.run_id }}
