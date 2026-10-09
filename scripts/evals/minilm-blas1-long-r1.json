@@ -1,0 +1,31 @@
+{
+  "timestamp_utc": "2026-09-26T22:52:23.153864+00:00",
+  "url": "http://10.0.1.25:8080",
+  "endpoint": "http://10.0.1.25:8080/v1/embeddings",
+  "model": "all-MiniLM-L6-v2",
+  "text_length": 555,
+  "requests": 100,
+  "successes": 100,
+  "failures": 0,
+  "concurrency": 8,
+  "warmup": 5,
+  "elapsed_s": 4.263526756782085,
+  "requests_per_second": 23.454760742600673,
+  "latency_ms": {
+    "min": 86.98271890170872,
+    "avg": 331.88626629300416,
+    "p50": 334.18974245432764,
+    "p95": 380.6919780909084,
+    "p99": 471.02743439376354,
+    "max": 473.0910351499915
+  },
+  "vector_dimensions": {
+    "384": 100
+  },
+  "vector_norm": {
+    "min": 0.99999997131423,
+    "avg": 0.9999999811685606,
+    "max": 1.000000007995316
+  },
+  "errors": {}
+}

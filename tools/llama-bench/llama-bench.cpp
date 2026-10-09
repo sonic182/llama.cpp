@@ -365,6 +365,7 @@ struct cmd_params {
     std::vector<bool>                no_op_offload;
     std::vector<bool>                no_host;
     std::vector<bool>                repack;
+    std::vector<bool>                reclaim_mmap_source;
     std::vector<size_t>              fit_params_target;
     std::vector<uint32_t>            fit_params_min_ctx;
     ggml_numa_strategy               numa;
@@ -411,6 +412,7 @@ static const cmd_params cmd_params_defaults = {
     /* no_op_offload        */ { false },
     /* no_host              */ { false },
     /* repack               */ { llama_model_default_params().use_extra_bufts },
+    /* reclaim_mmap_source  */ { false },
     /* fit_params_target    */ { 0 },
     /* fit_params_min_ctx   */ { 0 },
     /* numa                 */ GGML_NUMA_STRATEGY_DISABLED,
@@ -486,6 +488,7 @@ static void print_usage(int /* argc */, char ** argv) {
     printf("  -nopo, --no-op-offload <0|1>                      (default: 0)\n");
     printf("  --no-host <0|1>                                   (default: %s)\n", join(cmd_params_defaults.no_host, ",").c_str());
     printf("  --repack <0|1>                                    (default: %s)\n", join(cmd_params_defaults.repack, ",").c_str());
+    printf("  --reclaim-mmap-source <0|1>                       (default: %s)\n", join(cmd_params_defaults.reclaim_mmap_source, ",").c_str());
     printf("\n");
     printf(
         "Multiple values can be given for each parameter by separating them with ','\n"
@@ -916,6 +919,13 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
                 }
                 auto p = string_split<bool>(argv[i], split_delim);
                 params.repack.insert(params.repack.end(), p.begin(), p.end());
+            } else if (arg == "--reclaim-mmap-source") {
+                if (++i >= argc) {
+                    invalid_param = true;
+                    break;
+                }
+                auto p = string_split<bool>(argv[i], split_delim);
+                params.reclaim_mmap_source.insert(params.reclaim_mmap_source.end(), p.begin(), p.end());
             } else if (arg == "-ts" || arg == "--tensor-split") {
                 if (++i >= argc) {
                     invalid_param = true;
@@ -1186,6 +1196,9 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
     if (params.repack.empty()) {
         params.repack = cmd_params_defaults.repack;
     }
+    if (params.reclaim_mmap_source.empty()) {
+        params.reclaim_mmap_source = cmd_params_defaults.reclaim_mmap_source;
+    }
     if (params.n_threads.empty()) {
         params.n_threads = cmd_params_defaults.n_threads;
     }
@@ -1236,6 +1249,7 @@ struct cmd_params_instance {
     bool               no_op_offload;
     bool               no_host;
     bool               repack;
+    bool               reclaim_mmap_source;
     size_t             fit_target;
     uint32_t           fit_min_ctx;
 
@@ -1253,6 +1267,7 @@ struct cmd_params_instance {
         mparams.tensor_split  = tensor_split.data();
         mparams.no_host       = no_host;
         mparams.use_extra_bufts = repack;
+        mparams.reclaim_mmap_source = reclaim_mmap_source;
 
         if (n_cpu_moe <= 0) {
             if (tensor_buft_overrides.empty()) {
@@ -1299,6 +1314,7 @@ struct cmd_params_instance {
                main_gpu == other.main_gpu && tensor_split == other.tensor_split &&
                load_mode == other.load_mode && lazy_mode == other.lazy_mode &&
                devices == other.devices && no_host == other.no_host && repack == other.repack &&
+               reclaim_mmap_source == other.reclaim_mmap_source &&
                vec_tensor_buft_override_equal(tensor_buft_overrides, other.tensor_buft_overrides);
     }
 
@@ -1339,6 +1355,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
     for (const auto & ot : params.tensor_buft_overrides)
     for (const auto & noh : params.no_host)
     for (const auto & rpk : params.repack)
+    for (const auto & rms : params.reclaim_mmap_source)
     for (const auto & embd : params.embeddings)
     for (const auto & nopo : params.no_op_offload)
     for (const auto & nb : params.n_batch)
@@ -1384,6 +1401,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .no_op_offload         = */ nopo,
                 /* .no_host               = */ noh,
                 /* .repack                = */ rpk,
+                /* .reclaim_mmap_source   = */ rms,
                 /* .fit_target            = */ fpt,
                 /* .fit_min_ctx           = */ fpc,
             };
@@ -1422,6 +1440,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .no_op_offload         = */ nopo,
                 /* .no_host               = */ noh,
                 /* .repack                = */ rpk,
+                /* .reclaim_mmap_source   = */ rms,
                 /* .fit_target            = */ fpt,
                 /* .fit_min_ctx           = */ fpc,
             };
@@ -1460,6 +1479,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .no_op_offload         = */ nopo,
                 /* .no_host               = */ noh,
                 /* .repack                = */ rpk,
+                /* .reclaim_mmap_source   = */ rms,
                 /* .fit_target            = */ fpt,
                 /* .fit_min_ctx           = */ fpc,
             };
