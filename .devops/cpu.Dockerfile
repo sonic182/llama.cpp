@@ -20,11 +20,9 @@ RUN LLAMA_BUILD_NUMBER="$APP_VERSION" npm run build
 FROM docker.io/ubuntu:$UBUNTU_VERSION AS build
 
 ARG TARGETARCH
-ARG GGML_BLAS=OFF
 
 RUN apt-get update && \
-    apt-get install -y gcc-14 g++-14 build-essential git cmake libssl-dev && \
-    if [ "$GGML_BLAS" = "ON" ]; then apt-get install -y libopenblas-dev pkg-config; fi
+    apt-get install -y gcc-14 g++-14 build-essential git cmake libssl-dev
 
 ENV CC=gcc-14 CXX=g++-14
 
@@ -35,7 +33,7 @@ COPY . .
 COPY --from=web /app/tools/ui/dist tools/ui/dist
 
 RUN if [ "$TARGETARCH" = "amd64" ] || [ "$TARGETARCH" = "arm64" ]; then \
-        cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON -DGGML_BLAS="$GGML_BLAS" -DGGML_BLAS_VENDOR=OpenBLAS; \
+        cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON; \
     else \
         echo "Unsupported architecture"; \
         exit 1; \
@@ -57,7 +55,6 @@ RUN mkdir -p /app/full \
 ## Base image
 FROM docker.io/ubuntu:$UBUNTU_VERSION AS base
 
-ARG GGML_BLAS=OFF
 ARG BUILD_DATE=N/A
 ARG APP_VERSION=N/A
 ARG APP_REVISION=N/A
@@ -73,7 +70,6 @@ LABEL org.opencontainers.image.created=$BUILD_DATE \
 
 RUN apt-get update \
     && apt-get install -y libgomp1 curl ffmpeg \
-    && if [ "$GGML_BLAS" = "ON" ]; then apt-get install -y libopenblas0-pthread; fi \
     && apt autoremove -y \
     && apt clean -y \
     && rm -rf /tmp/* /var/tmp/* \
