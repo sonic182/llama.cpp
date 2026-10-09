@@ -147,7 +147,7 @@ option(LLAMA_SUBPROCESS "llama-common: use subprocess, required by server tools 
 option(LLAMA_LLGUIDANCE "llama-common: include LLGuidance library for structured output in common utils" OFF)
 
 # rust
-option(LLAMA_RUST "llama: build the Rust workspace and its C shim" OFF)
+option(LLAMA_RUST "llama: build the Rust workspace and its C shim" ON)
 cmake_dependent_option(LLAMA_RUST_HTTP "llama: serve llama-server over the Rust HTTP transport" OFF "LLAMA_RUST" OFF)
 cmake_dependent_option(LLAMA_RUST_SCHEMA "llama: convert JSON schemas to grammars in Rust" OFF "LLAMA_RUST" OFF)
 

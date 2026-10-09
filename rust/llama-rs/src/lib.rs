@@ -1,5 +1,6 @@
 #![allow(clippy::missing_safety_doc)]
 
+extern crate llama_download;
 extern crate llama_http;
 extern crate llama_schema;
 

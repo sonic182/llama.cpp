@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["llama-sys", "llama", "llama-http", "llama-schema", "llama-rs", "tools/tokenize", "tools/gguf-split"]
+members = ["llama-sys", "llama", "llama-http", "llama-schema", "llama-download", "llama-rs", "tools/tokenize", "tools/gguf-split"]
 
 [workspace.package]
 edition = "2024"

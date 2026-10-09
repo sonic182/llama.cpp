@@ -10,4 +10,5 @@ crate-type = ["staticlib", "rlib"]
 
 [dependencies]
 llama-http = { path = "../llama-http" }
+llama-download = { path = "../llama-download" }
 llama-schema = { path = "../llama-schema" }

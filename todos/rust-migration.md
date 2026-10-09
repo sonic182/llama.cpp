@@ -30,6 +30,13 @@ Exit state: the original C++ is kept in the tree and compiles until each Rust pi
 7. **Test oracles.** `tools/server/tests/unit/*.py` are 248 pytest blackbox tests over HTTP. They are run with `tools/server/tests/tests.sh` and `LLAMA_SERVER_BIN_PATH` (`tools/server/tests/utils.py:151`), so they work unchanged against a Rust binary. The C++ tests in `tests/` (`test-jinja.cpp`, `test-chat*.cpp`, `test-sampling.cpp`, `test-arg-parser.cpp`, `test-json-schema-to-grammar.cpp`, registered in `tests/CMakeLists.txt:157-299`) are not directly reusable: differential testing is used (same input to C++ and Rust).
 8. **Project hardware.** The host is a Ryzen 5 3550H (4C/8T, SMT) and `todos/qwen3-0.6b-cpu-performance.md` sets the decision rule (improvement >=2%, regression <=1%) and pinning `--cpu-strict 1` on CPUs 0,2,4,6. The tokio layer cannot disturb that threadpool.
 
+## Design rule: data structures
+
+- Data structures stay in C/C++ by default. This covers `common_params` and its sub-structs, `common_params_sampling`, `common_params_model`, `common_chat_msg`, `common_chat_tool`, `common_chat_params`, `common_json`, the structs of `server-task.h` and `server_slot`.
+- Whether a data structure moves to Rust is decided case by case, asking the user when the phase reaches it. Nothing moves without that answer.
+- Rust provides logic behind a C layer: functions that take and return text (JSON, grammar, prompt) or opaque handles. If the layer needs fields, the C++ adapter copies them into flat C structs.
+- Rust data types that already exist are accepted for now (see Pending decisions).
+
 ## Phase 0 - Scaffolding (no behavior change)
 
 Legend: `[x]` done and committed, `[ ]` pending.
@@ -86,24 +93,25 @@ Changes:
 
 ## Phase 3 - `common/` from leaves inward (bottom-up)
 
-Order, each piece with differential test C++ vs Rust (jinja/chat are the highest fidelity risk):
+Order (from the phase 3 plan file), each piece with differential test C++ vs Rust (jinja/chat are the highest fidelity risk). `arg.cpp` moved to Phase 4:
 
 - [x] 3.0 groundwork: umbrella crate `rust/llama-rs` (one staticlib, `llama_rs_version` round trip from `libllama-common`), `add_subdirectory(rust)` moved before `common`, single copy of Rust `std` checked with `nm`. Golden-vector script `scripts/rust-golden/` lands with 3.1.
-- [x] `json-schema-to-grammar` (`common/json-schema-to-grammar.cpp`, 1028 lines): `rust/llama-schema` behind `LLAMA_RUST_SCHEMA`. The pure schema-to-grammar function is ported; `build_grammar(cb)`, the `common_chat_schema` AST and `trie` stay in C++ until 3.5/3.6. Verified with the three C++ tests with the flag ON, 81 golden cases, a 45k-schema differential against the C++ build and the server pytest (`test_chat_completion`, `test_compat_anthropic`, `test_basic`: 90 pass). Not built with `BUILD_SHARED_LIBS=OFF`.
-- [ ] `download` (`common/download.cpp`, `reqwest`)
-- [ ] `arg.cpp` (`clap`, 4770 lines; maintain exact flag compatibility)
-- [ ] jinja (`common/jinja`, 6.3k)
-- [ ] `peg-parser.cpp`, `chat-peg-parser.cpp`, `chat.cpp`
-- [ ] `sampling.cpp` + the two custom samplers (`extern "C"` vtable)
-- [ ] `imatrix-loader.cpp` and `quantize`
+- [x] `json-schema-to-grammar` (`common/json-schema-to-grammar.cpp`, 1028 lines): `rust/llama-schema` behind `LLAMA_RUST_SCHEMA`. The pure schema-to-grammar function is ported; `build_grammar(cb)` and the `common_chat_schema` AST stay in C++ until 3.5/3.6. A Rust `trie.rs` exists in `llama-schema`, while `common/trie.cpp` is still used by C++ (reasoning-budget, peg-parser); see Pending decisions. Verified with the three C++ tests with the flag ON, 81 golden cases, a 45k-schema differential against the C++ build and the server pytest (`test_chat_completion`, `test_compat_anthropic`, `test_basic`: 90 pass). Built and passing with `BUILD_SHARED_LIBS=OFF` (`test-json-schema-to-grammar`, `test-json-schema`, `test-grammar-integration`). Static builds skip the `llama-gguf-split` and `llama-tokenize` binaries, because `llama-sys` always links libllama as a shared library.
+- [x] 3.2 `download` + `hf-cache`. Done in Rust (`rust/llama-download`) and wired through C++ shims with unchanged headers: `common/download.cpp` (about 1090 to 264 lines; keeps `ProgressBar`, `is_output_a_tty`, `is_http_status_ok` and `common_download_run_tasks`) and `common/hf-cache.cpp` (513 to 28 lines). `llama-download` is a fixed dependency of `llama-rs`, so the `LLAMA_RUST_DOWNLOAD` flag is gone; `LLAMA_RUST` now defaults to ON, because `common/` fails at configure without it. Checks: `tests/golden.rs` replays 92 vectors recorded from `common/download.cpp`; `tests/cache.rs` replays a cache scenario against the C++ oracle; `tests/remote.rs` covers a plain URL (200, etag, 304, resume, offline); `tests/docker.rs` resolves `ai/smollm2:135M-Q2_K`. Against the old C++ build: Docker `ai/smollm2:135M-Q4_0` gives the same sha256 and etag; a plain URL gives 200 then 304 with the same bytes and etag; 404 gives 404 in both; an unknown host fails in both. C++ tests on `build-rust-static` (`BUILD_SHARED_LIBS=OFF`): `test-arg-parser`, `test-model-resolution`, `test-download-model` and `test-generate-models` pass. TLS: a `llama-server` built with `LLAMA_OPENSSL=ON` and `LLAMA_RUST_HTTP=ON` serves HTTPS (ring) and downloads its model from Hugging Face (reqwest, aws-lc) in the same process, and `/health` answers 200 over TLS. Logs: the download path emits the C++ messages again, from Rust through `llama_dl_set_log_sink`; checked against a real run for a missing HF file, URL retries (500, then retrying after 2 and 4 seconds, then download failed after 3 attempts) and a Docker model.
+- [ ] 3.3 `imatrix-loader` + `quantize` (`common/imatrix-loader.cpp`, `tools/quantize`), on top of the `llama-ext.h` shim.
+- [ ] 3.4 jinja (`common/jinja`, 6.3k). Pending decision, see below.
+- [ ] 3.5 `peg-parser.cpp`, `chat-peg-parser.cpp`, `build_grammar`. Pending decision, see below.
+- [ ] 3.6 chat cluster (`chat.cpp`, `chat-diff-analyzer.cpp`, `chat-auto-parser*`, `common/parsers/`) in three sub-steps: (a) `parsers/`, (b) diff-analyzer + auto-parser, (c) `chat.cpp`. Pending decision, see below.
+- [ ] 3.7 samplers: `reasoning-budget`, `llguidance`, `sampling.cpp` (`extern "C"` vtable). Default: `common_params_sampling` stays in C++; ask when reached.
 
 The ~100 ggml/gguf calls in `common/` (`common.cpp`: 30, `arg.cpp`: 26, `imatrix-loader.cpp`: 22, `fit.cpp`: 20) go through `llama-sys`.
 
 ## Phase 4 - Scheduler and `main` in Rust
 
-- [ ] Port `server_context_impl`/`server_slot` (`server-context.cpp:239-4151`) as a `std::thread` with task `mpsc` and one `mpsc` per request. Remove `server-queue.{h,cpp}` and the `next()` pull from `server-http.h`.
+- [ ] `arg.cpp`, `preset.cpp` and `common_params` (moved from Phase 3). Default: they stay in C++, because the option handlers mutate `common_params` (`common/common.h:449`, ~330 fields used in 64 files). Ask the user when Phase 4 starts, before any `clap` rewrite. If a specific piece gains from Rust, extract it to a pure C function. `--http-workers` is already in `common/arg.cpp`.
+- [ ] Port the logic of `server_context_impl` (`server-context.cpp:833-4151`) as a `std::thread` with task `mpsc` and one `mpsc` per request. `server_slot` (`server-context.cpp:239-735`) defaults to a C++ struct; ask when Phase 4 starts. Remove `server-queue.{h,cpp}` and the `next()` pull from `server-http.h`.
 - [ ] `main` moves to Rust; C++ becomes a library (`llama-common` reduced to the shim). `app/llama.cpp:129` (unified binary) and `tools/server/main.cpp` are adapted.
-- [ ] Routes (`server-context.cpp:4650-5288`) to axum + serde; `server-task.h` (structs `:50-644`) to serde types.
+- [ ] Routes (`server-context.cpp:4650-5288`) to axum. The `server-task.h` structs (`:50-644`) default to C++ (see Pending decisions).
 - [ ] Async workers that delegate to the scheduler: handlers no longer block (`server_response_reader::next`, `tools/server/server-queue.h:203-244`) and each request becomes an async task awaiting its channel. The blocking thread per request that `serve_blocking` creates today (`rust/llama-http/src/service.rs`, `spawn_blocking`) and the cap `n_threads_http + 1024` (`tools/server/server-http-rust.inl`, `config.n_blocking`) disappear. Already done: the number of async workers is configurable with `--http-workers N|auto` (`common/arg.cpp`, `common/common.h`, `rust_http_workers()` in `server-http-rust.inl`).
 - [ ] Token coalescing of the stream, at the application level (study and measure before activating by default):
   - Insertion point: the async task that is currently `StreamBody::poll_frame` (`rust/llama-http/src/service.rs`), with a `select!` between the result channel and a timer.
@@ -114,7 +122,7 @@ The ~100 ggml/gguf calls in `common/` (`common.cpp`: 30, `arg.cpp`: 26, `imatrix
 ## Phase 5 - What remains
 
 - [ ] `server-models.cpp` (router, 2612 lines, child process + proxy, ideal for tokio)
-- [ ] `server-mcp.cpp`/`server-tools.cpp` (MCP, crate `rmcp`)
+- [ ] `server-mcp.cpp`/`server-tools.cpp` (MCP, crate `rmcp`). Check the protocol types against the design rule before choosing `rmcp`.
 - [ ] `common/speculative.cpp` (2995 lines, last due to its dependence on `llama-ext.h`)
 - [ ] `common/fit.cpp`
 - [ ] remaining tools (`llama-bench`, `perplexity`, `imatrix`, `cli`, `completion`)
@@ -142,10 +150,24 @@ Read-only (behavior reference): `tools/server/server-queue.h`, `tools/server/ser
   - [x] Phase 1 (tokenize and gguf-split, byte-for-byte output)
   - [ ] Phase 3 (`models/templates`, `tests/test-chat.cpp` as vector source)
 
+## Next step
+
+3.2 close-out: done. The server pytest on the `LLAMA_RUST_HTTP=ON` build passes the non-slow suite (376 passed, 4 skipped, 199 slow deselected). Open: the timeout difference in decision 5. Then the boundary step: `common_params_model` and `common_download_callback` as Rust types.
+
+## Pending decisions (asked when the phase reaches them)
+
+1. **Jinja, PEG and chat (3.4-3.6).** Most of their code is data types: jinja AST and values, the PEG arena, chat messages, tools and params. Ask before 3.4: (a) keep them in C++ and shrink Phase 3 to download, quantize and samplers, or (b) Rust owns internal types and only the boundary is C.
+2. **Existing Rust data types.** `rust/llama-schema/src/schema.rs` (JSON schema AST), `rust/llama-schema/src/trie.rs` and `rust/llama-http/src/config.rs`. Accepted for now; revisit only if they change.
+3. **Phase 4 structs.** `server-task.h` structs and `server_slot`: default C++, ask when Phase 4 starts.
+4. **arg.cpp (Phase 4).** Default C++ with `common_params`, no `clap` rewrite. Ask when Phase 4 starts.
+5. **3.2 download (revised).** The first design used `hf-hub` 1.0.0 for Hugging Face transport and cache. The user chose to remove it: `src/hf.rs`, `tests/hf.rs` and the dependency are gone, and the lock adds 102 package names over HEAD instead of 219. The bytes of every file, Hugging Face included, go through the URL path in `rust/llama-download/src/remote.rs` (reqwest 0.13, progress, cancellation, etag, resume). The Hugging Face listing reproduces the C++ calls: `api/models/<repo>/refs`, `api/models/<repo>/tree/<commit>?recursive=true` and `resolve/<commit>/<path>`. Its coverage is `test-download-model` and `test-model-resolution` in ctest. Rust owns the selection logic (`find_best_*`, split GGUF, `get_all_parts`), the cache-dir resolution and the Docker registry. The C++ `download.h` and `hf-cache.h` are unchanged and `common/download.cpp` and `common/hf-cache.cpp` forward to Rust, so consumers (`arg.cpp`, `server-models.cpp`, tests) do not change. `hf_cache::hf_file` and `common_download_opts` stay in C++. `http.h` keeps `parse_url`, `format_host` and `get_free_port` for `server-http.cpp` and `server-models.cpp`. Known gaps against C++: `LOG_TRC` lines and the error lines printed when a cancelled download is torn down are not reproduced, and the request timeout is 5 s over the whole `send()` (connect, TLS and headers), while C++ used a 300 s connect timeout and a 5 s read timeout. Pending, as the last boundary step: replacing the C++ `common_params_model` and `common_download_callback` with Rust types (126 field-access sites).
+6. **Still open:** `examples/` and `pocs/`, `tools/mtmd`, and `tools/rpc`.
+
 ## Risks and default decisions
 
+- **rustls providers:** `llama-download` gets reqwest's default provider (aws-lc-rs), while `llama-http` uses `ring` with explicit `builder_with_provider` (`rust/llama-http/src/tls.rs:33`). Reading the code, neither path calls the implicit `ClientConfig::builder()`, which is the call that panics when two providers are compiled and none is installed. Verified by a run: a `llama-server` built with `LLAMA_OPENSSL=ON` and `LLAMA_RUST_HTTP=ON` serves HTTPS with ring and downloads its model with reqwest (aws-lc) in the same process, with no provider panic.
 - **Upstream divergence:** `tools/server` and `common/` are active areas in ggml-org. Keep C++ in parallel until parity and treat upstream as a source of changes to port.
 - **`llama.h` and `llama-ext.h` change:** pin the revision and regenerate bindings in CI.
 - **Thread cost in Phase 2:** each stream occupies a blocking thread until Phase 4. Accepted as an intermediate step.
-- Defaults chosen: workspace in `rust/`, axum/hyper, rustls behind the same flag as OpenSSL, `LLAMA_RUST` default OFF, CMake as the C++ driver and cargo for Rust.
+- Defaults chosen: workspace in `rust/`, axum/hyper, rustls behind the same flag as OpenSSL, `LLAMA_RUST` default ON since 3.2 (`common/CMakeLists.txt:153` stops at configure when it is OFF), CMake as the C++ driver and cargo for Rust. `LLAMA_RUST_HTTP` and `LLAMA_RUST_SCHEMA` stay OFF by default.
 - Limits of analysis: did not measure coupling at the call-site level (gmem does not index references) and the outline of `llama.h` came out partial due to `LLAMA_API` macros.

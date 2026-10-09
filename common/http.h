@@ -126,10 +126,6 @@ static std::pair<httplib::Client, common_http_url> common_http_client(const std:
     return { std::move(cli), std::move(parts) };
 }
 
-static std::string common_http_show_masked_url(const common_http_url & parts) {
-    return parts.scheme + "://" + (parts.user.empty() ? "" : "****:****@") + common_http_format_host(parts.host) + parts.path;
-}
-
 static int common_http_get_free_port() {
 #ifdef _WIN32
     WSADATA wsaData;

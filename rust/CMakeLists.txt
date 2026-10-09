@@ -7,12 +7,19 @@ if (LLAMA_OPENSSL)
     list(APPEND LLAMA_RUST_CARGO_FEATURES --features llama-http/tls)
 endif()
 
+# llama-sys always links libllama as a shared library, so the binaries cannot link against static libs
+set(LLAMA_RUST_CARGO_EXCLUDES "")
+if (NOT BUILD_SHARED_LIBS)
+    list(APPEND LLAMA_RUST_CARGO_EXCLUDES --exclude llama-gguf-split --exclude llama-tokenize)
+endif()
+
 add_custom_target(llama-rust ALL
     COMMAND ${CMAKE_COMMAND} -E env
         LLAMA_LIB_DIR=$<TARGET_FILE_DIR:llama-ext-c>
         CARGO_TARGET_DIR=${CMAKE_BINARY_DIR}/rust
         ${CARGO_EXECUTABLE} build --workspace $<$<NOT:$<CONFIG:Debug>>:--release>
         ${LLAMA_RUST_CARGO_FEATURES}
+        ${LLAMA_RUST_CARGO_EXCLUDES}
         --manifest-path ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml
     COMMAND_EXPAND_LISTS
     USES_TERMINAL
@@ -25,7 +32,7 @@ add_library(llama-rs STATIC IMPORTED GLOBAL)
 set_target_properties(llama-rs PROPERTIES
     IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/rust/release/libllama_rs.a
     IMPORTED_LOCATION_DEBUG ${CMAKE_BINARY_DIR}/rust/debug/libllama_rs.a
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/llama-rs/include;${CMAKE_CURRENT_SOURCE_DIR}/llama-schema/include"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/llama-rs/include;${CMAKE_CURRENT_SOURCE_DIR}/llama-schema/include;${CMAKE_CURRENT_SOURCE_DIR}/llama-download/include"
     INTERFACE_LINK_LIBRARIES "${CMAKE_DL_LIBS};m;${CMAKE_THREAD_LIBS_INIT}"
 )
 add_dependencies(llama-rs llama-rust)

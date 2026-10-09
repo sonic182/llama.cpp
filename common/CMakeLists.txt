@@ -76,6 +76,7 @@ add_library(${TARGET}
     debug.h
     download.cpp
     download.h
+    download-rust.h
     fit.cpp
     fit.h
     hf-cache.cpp
@@ -146,6 +147,10 @@ if (BUILD_SHARED_LIBS)
 
     # TODO: make fine-grained exports in the future
     set_target_properties(${TARGET} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
+if (NOT LLAMA_RUST)
+    message(FATAL_ERROR "llama: common downloads are implemented in Rust, configure with -DLLAMA_RUST=ON")
 endif()
 
 if (LLAMA_RUST)
