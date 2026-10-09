@@ -1461,6 +1461,135 @@ void ggml_gemv_q4_0_8x8_q8_0(int n, float * GGML_RESTRICT s, size_t bs, const vo
     ggml_gemv_q4_0_8x8_q8_0_generic(n, s, bs, vx, vy, nr, nc);
 }
 
+#if defined(__AVX2__) && defined(__GNUC__) && defined(__x86_64__) && !defined(_WIN32)
+#define GGML_Q4_K_GEMV_ASM
+
+template <int SHUFFLE0, int SHUFFLE1, int SHUFFLE2, int SHUFFLE3>
+static inline void ggml_gemv_q4_K_8x8_q8_K_asm_block(const uint8_t * weights, const int8_t * lhs0, const int8_t * lhs1, const int8_t * lhs2, const int8_t * lhs3, const __m256i nibble_mask, __m256i & iacc_0, __m256i & iacc_1) {
+    asm volatile(
+        "vmovdqu (%[weights]), %%ymm8\n\t"
+        "vmovdqu 32(%[weights]), %%ymm9\n\t"
+        "vbroadcasti128 (%[lhs0]), %%ymm10\n\t"
+        "vbroadcasti128 (%[lhs1]), %%ymm11\n\t"
+        "vpand %[mask], %%ymm8, %%ymm12\n\t"
+        "vpand %[mask], %%ymm9, %%ymm13\n\t"
+        "vpshufd $177, %%ymm13, %%ymm14\n\t"
+        "vpblendd $170, %%ymm14, %%ymm12, %%ymm14\n\t"
+        "vpshufd $%c[shuffle0], %%ymm10, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc0], %[acc0]\n\t"
+        "vpshufd $177, %%ymm12, %%ymm14\n\t"
+        "vpblendd $170, %%ymm13, %%ymm14, %%ymm14\n\t"
+        "vpshufd $%c[shuffle1], %%ymm10, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc0], %[acc0]\n\t"
+        "vpsrlw $4, %%ymm8, %%ymm12\n\t"
+        "vpsrlw $4, %%ymm9, %%ymm13\n\t"
+        "vpand %[mask], %%ymm12, %%ymm12\n\t"
+        "vpand %[mask], %%ymm13, %%ymm13\n\t"
+        "vpshufd $177, %%ymm13, %%ymm14\n\t"
+        "vpblendd $170, %%ymm14, %%ymm12, %%ymm14\n\t"
+        "vpshufd $%c[shuffle0], %%ymm11, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc1], %[acc1]\n\t"
+        "vpshufd $177, %%ymm12, %%ymm14\n\t"
+        "vpblendd $170, %%ymm13, %%ymm14, %%ymm14\n\t"
+        "vpshufd $%c[shuffle1], %%ymm11, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc1], %[acc1]\n\t"
+        "vmovdqu 64(%[weights]), %%ymm8\n\t"
+        "vmovdqu 96(%[weights]), %%ymm9\n\t"
+        "vpand %[mask], %%ymm8, %%ymm12\n\t"
+        "vpand %[mask], %%ymm9, %%ymm13\n\t"
+        "vpshufd $177, %%ymm13, %%ymm14\n\t"
+        "vpblendd $170, %%ymm14, %%ymm12, %%ymm14\n\t"
+        "vpshufd $%c[shuffle2], %%ymm10, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc0], %[acc0]\n\t"
+        "vpshufd $177, %%ymm12, %%ymm14\n\t"
+        "vpblendd $170, %%ymm13, %%ymm14, %%ymm14\n\t"
+        "vpshufd $%c[shuffle3], %%ymm10, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc0], %[acc0]\n\t"
+        "vpsrlw $4, %%ymm8, %%ymm12\n\t"
+        "vpsrlw $4, %%ymm9, %%ymm13\n\t"
+        "vpand %[mask], %%ymm12, %%ymm12\n\t"
+        "vpand %[mask], %%ymm13, %%ymm13\n\t"
+        "vpshufd $177, %%ymm13, %%ymm14\n\t"
+        "vpblendd $170, %%ymm14, %%ymm12, %%ymm14\n\t"
+        "vpshufd $%c[shuffle2], %%ymm11, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc1], %[acc1]\n\t"
+        "vpshufd $177, %%ymm12, %%ymm14\n\t"
+        "vpblendd $170, %%ymm13, %%ymm14, %%ymm14\n\t"
+        "vpshufd $%c[shuffle3], %%ymm11, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc1], %[acc1]\n\t"
+        "vmovdqu 128(%[weights]), %%ymm8\n\t"
+        "vmovdqu 160(%[weights]), %%ymm9\n\t"
+        "vbroadcasti128 (%[lhs2]), %%ymm10\n\t"
+        "vbroadcasti128 (%[lhs3]), %%ymm11\n\t"
+        "vpand %[mask], %%ymm8, %%ymm12\n\t"
+        "vpand %[mask], %%ymm9, %%ymm13\n\t"
+        "vpshufd $177, %%ymm13, %%ymm14\n\t"
+        "vpblendd $170, %%ymm14, %%ymm12, %%ymm14\n\t"
+        "vpshufd $%c[shuffle0], %%ymm10, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc0], %[acc0]\n\t"
+        "vpshufd $177, %%ymm12, %%ymm14\n\t"
+        "vpblendd $170, %%ymm13, %%ymm14, %%ymm14\n\t"
+        "vpshufd $%c[shuffle1], %%ymm10, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc0], %[acc0]\n\t"
+        "vpsrlw $4, %%ymm8, %%ymm12\n\t"
+        "vpsrlw $4, %%ymm9, %%ymm13\n\t"
+        "vpand %[mask], %%ymm12, %%ymm12\n\t"
+        "vpand %[mask], %%ymm13, %%ymm13\n\t"
+        "vpshufd $177, %%ymm13, %%ymm14\n\t"
+        "vpblendd $170, %%ymm14, %%ymm12, %%ymm14\n\t"
+        "vpshufd $%c[shuffle0], %%ymm11, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc1], %[acc1]\n\t"
+        "vpshufd $177, %%ymm12, %%ymm14\n\t"
+        "vpblendd $170, %%ymm13, %%ymm14, %%ymm14\n\t"
+        "vpshufd $%c[shuffle1], %%ymm11, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc1], %[acc1]\n\t"
+        "vmovdqu 192(%[weights]), %%ymm8\n\t"
+        "vmovdqu 224(%[weights]), %%ymm9\n\t"
+        "vpand %[mask], %%ymm8, %%ymm12\n\t"
+        "vpand %[mask], %%ymm9, %%ymm13\n\t"
+        "vpshufd $177, %%ymm13, %%ymm14\n\t"
+        "vpblendd $170, %%ymm14, %%ymm12, %%ymm14\n\t"
+        "vpshufd $%c[shuffle2], %%ymm10, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc0], %[acc0]\n\t"
+        "vpshufd $177, %%ymm12, %%ymm14\n\t"
+        "vpblendd $170, %%ymm13, %%ymm14, %%ymm14\n\t"
+        "vpshufd $%c[shuffle3], %%ymm10, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc0], %[acc0]\n\t"
+        "vpsrlw $4, %%ymm8, %%ymm12\n\t"
+        "vpsrlw $4, %%ymm9, %%ymm13\n\t"
+        "vpand %[mask], %%ymm12, %%ymm12\n\t"
+        "vpand %[mask], %%ymm13, %%ymm13\n\t"
+        "vpshufd $177, %%ymm13, %%ymm14\n\t"
+        "vpblendd $170, %%ymm14, %%ymm12, %%ymm14\n\t"
+        "vpshufd $%c[shuffle2], %%ymm11, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc1], %[acc1]\n\t"
+        "vpshufd $177, %%ymm12, %%ymm14\n\t"
+        "vpblendd $170, %%ymm13, %%ymm14, %%ymm14\n\t"
+        "vpshufd $%c[shuffle3], %%ymm11, %%ymm15\n\t"
+        "vpmaddubsw %%ymm15, %%ymm14, %%ymm14\n\t"
+        "vpaddw %%ymm14, %[acc1], %[acc1]\n\t"
+        : [acc0] "+&x" (iacc_0), [acc1] "+&x" (iacc_1)
+        : [weights] "r" (weights), [lhs0] "r" (lhs0), [lhs1] "r" (lhs1), [lhs2] "r" (lhs2), [lhs3] "r" (lhs3), [mask] "x" (nibble_mask),
+          [shuffle0] "i" (SHUFFLE0), [shuffle1] "i" (SHUFFLE1), [shuffle2] "i" (SHUFFLE2), [shuffle3] "i" (SHUFFLE3)
+        : "ymm8", "ymm9", "ymm10", "ymm11", "ymm12", "ymm13", "ymm14", "ymm15", "memory");
+}
+#endif
+
 void ggml_gemv_q4_K_8x8_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const void * GGML_RESTRICT vx, const void * GGML_RESTRICT vy, int nr, int nc) {
     const int qk = QK_K;
     const int nb = n / qk;
@@ -1537,6 +1666,7 @@ void ggml_gemv_q4_K_8x8_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const vo
                 // Processes two sub blocks from each Q4_K in each iteration
                 for (int sb = 0; sb < QK_K / 64; sb++) {
 
+#if !defined(GGML_Q4_K_GEMV_ASM)
                     // Load the eight block_q4_K for two sub blocks quantized values interleaved with each other in chunks of eight - B0,B1 ....B6,B7
                     const __m256i rhs_raw_vec_0123_0 = _mm256_loadu_si256((const __m256i * )(b_ptr[b].qs + sb * 256));
                     const __m256i rhs_raw_vec_4567_0 = _mm256_loadu_si256((const __m256i * )(b_ptr[b].qs + 32 + sb * 256));
@@ -1567,6 +1697,7 @@ void ggml_gemv_q4_K_8x8_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const vo
                     const __m256i rhs_vec_4567_12 = _mm256_and_si256(_mm256_srli_epi16(rhs_raw_vec_4567_2, 4), m4b);
                     const __m256i rhs_vec_0123_13 = _mm256_and_si256(_mm256_srli_epi16(rhs_raw_vec_0123_3, 4), m4b);
                     const __m256i rhs_vec_4567_13 = _mm256_and_si256(_mm256_srli_epi16(rhs_raw_vec_4567_3, 4), m4b);
+#endif
 
                     uint32_t utmp_0[4], utmp_1[4];
 
@@ -1600,6 +1731,7 @@ void ggml_gemv_q4_K_8x8_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const vo
                     // Mins of first and second sub block of Q4_K block are arranged side by side
                     __m256i mins_01 = _mm256_cvtepu8_epi16(_mm_unpacklo_epi8(_mm_shuffle_epi32(mins_and_scales_0, 78), _mm_shuffle_epi32(mins_and_scales_1, 78)));
 
+#if !defined(GGML_Q4_K_GEMV_ASM)
                     // Load the two sub block values corresponding to sb in block_q8_K in batches of 16 bytes and replicate the same across 256 bit vector
                     __m256i lhs_vec_00 = _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *)(a_ptr[b].qs + sb * 64)));
                     __m256i lhs_vec_01 = _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *)(a_ptr[b].qs + 16 + sb * 64)));
@@ -1610,6 +1742,7 @@ void ggml_gemv_q4_K_8x8_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const vo
                     lhs_vec_01 = _mm256_permute2f128_si256(lhs_vec_01, lhs_vec_01, 0);
                     lhs_vec_10 = _mm256_permute2f128_si256(lhs_vec_10, lhs_vec_10, 0);
                     lhs_vec_11 = _mm256_permute2f128_si256(lhs_vec_11, lhs_vec_11, 0);
+#endif
 
                     // Dot product done within 32 bit lanes and accumulated in the same vector
                     // First done for first sub block and then for second sub block in each sb
@@ -1622,6 +1755,11 @@ void ggml_gemv_q4_K_8x8_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const vo
                     __m256i iacc_0 = _mm256_setzero_si256();
                     __m256i iacc_1 = _mm256_setzero_si256();
 
+#if defined(GGML_Q4_K_GEMV_ASM)
+                    const uint8_t * weights = b_ptr[b].qs + sb * 256;
+                    const int8_t * lhs = a_ptr[b].qs + sb * 64;
+                    ggml_gemv_q4_K_8x8_q8_K_asm_block<0, 85, 170, 255>(weights, lhs, lhs + 32, lhs + 16, lhs + 48, m4b, iacc_0, iacc_1);
+#else
                     iacc_0 = _mm256_add_epi16(iacc_0, _mm256_maddubs_epi16(_mm256_blend_epi32(rhs_vec_0123_00 ,_mm256_shuffle_epi32(rhs_vec_4567_00, 177), 170), _mm256_shuffle_epi32(lhs_vec_00, 0)));
                     iacc_0 = _mm256_add_epi16(iacc_0, _mm256_maddubs_epi16(_mm256_blend_epi32(_mm256_shuffle_epi32(rhs_vec_0123_00, 177) ,rhs_vec_4567_00, 170), _mm256_shuffle_epi32(lhs_vec_00, 85)));
 
@@ -1634,8 +1772,6 @@ void ggml_gemv_q4_K_8x8_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const vo
                     iacc_0 = _mm256_add_epi16(iacc_0, _mm256_maddubs_epi16(_mm256_blend_epi32(rhs_vec_0123_03 ,_mm256_shuffle_epi32(rhs_vec_4567_03, 177), 170), _mm256_shuffle_epi32(lhs_vec_01, 170)));
                     iacc_0 = _mm256_add_epi16(iacc_0, _mm256_maddubs_epi16(_mm256_blend_epi32(_mm256_shuffle_epi32(rhs_vec_0123_03, 177) ,rhs_vec_4567_03, 170), _mm256_shuffle_epi32(lhs_vec_01, 255)));
 
-                    iacc_0 = _mm256_madd_epi16(iacc_0, scales_0);
-
                     iacc_1 = _mm256_add_epi16(iacc_1, _mm256_maddubs_epi16(_mm256_blend_epi32(rhs_vec_0123_10 ,_mm256_shuffle_epi32(rhs_vec_4567_10, 177), 170), _mm256_shuffle_epi32(lhs_vec_10, 0)));
                     iacc_1 = _mm256_add_epi16(iacc_1, _mm256_maddubs_epi16(_mm256_blend_epi32(_mm256_shuffle_epi32(rhs_vec_0123_10, 177) ,rhs_vec_4567_10, 170), _mm256_shuffle_epi32(lhs_vec_10, 85)));
 
@@ -1647,7 +1783,9 @@ void ggml_gemv_q4_K_8x8_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const vo
 
                     iacc_1 = _mm256_add_epi16(iacc_1, _mm256_maddubs_epi16(_mm256_blend_epi32(rhs_vec_0123_13 ,_mm256_shuffle_epi32(rhs_vec_4567_13, 177), 170), _mm256_shuffle_epi32(lhs_vec_11, 170)));
                     iacc_1 = _mm256_add_epi16(iacc_1, _mm256_maddubs_epi16(_mm256_blend_epi32(_mm256_shuffle_epi32(rhs_vec_0123_13, 177) ,rhs_vec_4567_13, 170), _mm256_shuffle_epi32(lhs_vec_11, 255)));
+#endif
 
+                    iacc_0 = _mm256_madd_epi16(iacc_0, scales_0);
                     iacc_1 = _mm256_madd_epi16(iacc_1, scales_1);
 
                     // Accumulate the iacc value for one sb
@@ -1683,6 +1821,7 @@ void ggml_gemv_q4_K_8x8_q8_K(int n, float * GGML_RESTRICT s, size_t bs, const vo
     ggml_gemv_q4_K_8x8_q8_K_generic(n, s, bs, vx, vy, nr, nc);
 #endif
 }
+#undef GGML_Q4_K_GEMV_ASM
 
 void ggml_gemv_iq4_nl_8x8_q8_0(int n, float * GGML_RESTRICT s, size_t bs, const void * GGML_RESTRICT vx, const void * GGML_RESTRICT vy, int nr, int nc) {
 #if defined(__AVX2__)
