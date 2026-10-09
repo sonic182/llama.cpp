@@ -266,19 +266,19 @@ static void test_reasoning_budget_end_match() {
     {
         auto * sampler = common_reasoning_budget_init(nullptr, start, end, {102, 101}, 5, REASONING_BUDGET_IDLE);
 
-        GGML_ASSERT(common_reasoning_budget_get_end_match(sampler) == nullptr);
+        GGML_ASSERT(common_reasoning_budget_get_end_match(sampler).empty());
 
         llama_sampler_accept(sampler, 100); // COUNTING
         llama_sampler_accept(sampler, 50);
         llama_sampler_accept(sampler, 103);
         llama_sampler_accept(sampler, 104); // end matched via {103, 104}, DONE
 
-        const llama_tokens * matched = common_reasoning_budget_get_end_match(sampler);
-        GGML_ASSERT(matched != nullptr);
-        GGML_ASSERT(*matched == llama_tokens({103, 104}));
+        const llama_tokens matched = common_reasoning_budget_get_end_match(sampler);
+        GGML_ASSERT(!matched.empty());
+        GGML_ASSERT(matched == llama_tokens({103, 104}));
 
         llama_sampler_accept(sampler, 100); // re-arm, COUNTING
-        GGML_ASSERT(common_reasoning_budget_get_end_match(sampler) == nullptr);
+        GGML_ASSERT(common_reasoning_budget_get_end_match(sampler).empty());
 
         llama_sampler_free(sampler);
     }
@@ -293,9 +293,9 @@ static void test_reasoning_budget_end_match() {
         llama_sampler_accept(sampler, 103);
         llama_sampler_accept(sampler, 104); // both {104} and {103, 104} end here
 
-        const llama_tokens * matched = common_reasoning_budget_get_end_match(sampler);
-        GGML_ASSERT(matched != nullptr);
-        GGML_ASSERT(*matched == llama_tokens({103, 104}));
+        const llama_tokens matched = common_reasoning_budget_get_end_match(sampler);
+        GGML_ASSERT(!matched.empty());
+        GGML_ASSERT(matched == llama_tokens({103, 104}));
 
         llama_sampler_free(sampler);
     }
@@ -306,12 +306,12 @@ static void test_reasoning_budget_end_match() {
 
         llama_sampler_accept(sampler, 102);
         llama_sampler_accept(sampler, 103);
-        GGML_ASSERT(common_reasoning_budget_get_end_match(sampler) == nullptr);
+        GGML_ASSERT(common_reasoning_budget_get_end_match(sampler).empty());
         llama_sampler_accept(sampler, 104); // forced sequence complete, DONE
 
-        const llama_tokens * matched = common_reasoning_budget_get_end_match(sampler);
-        GGML_ASSERT(matched != nullptr);
-        GGML_ASSERT(*matched == llama_tokens({103, 104}));
+        const llama_tokens matched = common_reasoning_budget_get_end_match(sampler);
+        GGML_ASSERT(!matched.empty());
+        GGML_ASSERT(matched == llama_tokens({103, 104}));
 
         llama_sampler_free(sampler);
     }
@@ -322,13 +322,13 @@ static void test_reasoning_budget_end_match() {
 
         llama_sampler_accept(sampler, 102); // forced sequence complete, DONE
         GGML_ASSERT(common_reasoning_budget_get_state(sampler) == REASONING_BUDGET_DONE);
-        GGML_ASSERT(common_reasoning_budget_get_end_match(sampler) == nullptr);
+        GGML_ASSERT(common_reasoning_budget_get_end_match(sampler).empty());
 
         llama_sampler_free(sampler);
     }
 
     // a null sampler is safely ignored
-    GGML_ASSERT(common_reasoning_budget_get_end_match(nullptr) == nullptr);
+    GGML_ASSERT(common_reasoning_budget_get_end_match(nullptr).empty());
 
     fprintf(stderr, "  Test 'matched end sequence' passed\n");
 }

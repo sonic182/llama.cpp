@@ -10,8 +10,12 @@ crate-type = ["staticlib", "rlib"]
 test = false
 doctest = false
 
+[features]
+llguidance = ["llama-sampling/llguidance"]
+
 [dependencies]
 llama-http = { path = "../llama-http" }
 llama-download = { path = "../llama-download" }
 llama-schema = { path = "../llama-schema" }
 llama-quantize = { path = "../llama-quantize" }
+llama-sampling = { path = "../llama-sampling" }

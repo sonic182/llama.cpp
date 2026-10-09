@@ -166,35 +166,7 @@ target_link_libraries(${TARGET} PUBLIC  llama-common-base)
 target_link_libraries(${TARGET} PRIVATE cpp-httplib)
 
 if (LLAMA_LLGUIDANCE)
-    include(ExternalProject)
-    set(LLGUIDANCE_SRC ${CMAKE_BINARY_DIR}/llguidance/source)
-    set(LLGUIDANCE_PATH ${LLGUIDANCE_SRC}/target/release)
-    set(LLGUIDANCE_LIB_NAME "${CMAKE_STATIC_LIBRARY_PREFIX}llguidance${CMAKE_STATIC_LIBRARY_SUFFIX}")
-
-    ExternalProject_Add(llguidance_ext
-        GIT_REPOSITORY https://github.com/guidance-ai/llguidance
-        # v1.0.1:
-        GIT_TAG d795912fedc7d393de740177ea9ea761e7905774
-        PREFIX ${CMAKE_BINARY_DIR}/llguidance
-        SOURCE_DIR ${LLGUIDANCE_SRC}
-        BUILD_IN_SOURCE TRUE
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND cargo build --release --package llguidance
-        INSTALL_COMMAND ""
-        BUILD_BYPRODUCTS ${LLGUIDANCE_PATH}/${LLGUIDANCE_LIB_NAME} ${LLGUIDANCE_PATH}/llguidance.h
-        UPDATE_COMMAND ""
-    )
     target_compile_definitions(${TARGET} PUBLIC LLAMA_USE_LLGUIDANCE)
-
-    add_library(llguidance STATIC IMPORTED)
-    set_target_properties(llguidance PROPERTIES IMPORTED_LOCATION ${LLGUIDANCE_PATH}/${LLGUIDANCE_LIB_NAME})
-    add_dependencies(llguidance llguidance_ext)
-
-    target_include_directories(${TARGET} PRIVATE ${LLGUIDANCE_PATH})
-    target_link_libraries(${TARGET} PRIVATE llguidance)
-    if (WIN32)
-        target_link_libraries(${TARGET} PRIVATE ws2_32 userenv ntdll bcrypt)
-    endif()
 endif()
 
 target_link_libraries(${TARGET} PUBLIC llama Threads::Threads)

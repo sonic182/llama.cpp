@@ -1,0 +1,19 @@
+[package]
+name = "llama-sampling"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+build = "build.rs"
+
+[lib]
+crate-type = ["rlib"]
+doctest = false
+
+[features]
+llguidance = ["dep:llguidance"]
+
+[dependencies]
+libc = "0.2"
+llama = { path = "../llama" }
+llguidance = { version = "=1.0.1", optional = true }
