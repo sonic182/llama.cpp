@@ -2,6 +2,7 @@
 
 extern crate llama_download;
 extern crate llama_http;
+extern crate llama_quantize;
 extern crate llama_schema;
 
 use std::ffi::c_char;

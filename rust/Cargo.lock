@@ -681,11 +681,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "llama-quantize"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "llama",
+ "llama-quantize-core",
+]
+
+[[package]]
+name = "llama-quantize-core"
+version = "0.1.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "llama-rs"
 version = "0.1.0"
 dependencies = [
  "llama-download",
  "llama-http",
+ "llama-quantize",
  "llama-schema",
 ]
 

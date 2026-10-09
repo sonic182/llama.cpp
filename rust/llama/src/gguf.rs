@@ -14,10 +14,18 @@ pub struct GgufFile {
 
 impl GgufFile {
     pub fn open(path: &Path) -> Result<Self, Error> {
+        Self::open_impl(path, true)
+    }
+
+    pub fn open_with_data(path: &Path) -> Result<Self, Error> {
+        Self::open_impl(path, false)
+    }
+
+    fn open_impl(path: &Path, no_alloc: bool) -> Result<Self, Error> {
         let path = CString::new(path.as_os_str().as_bytes()).map_err(|_| Error::InvalidPath)?;
         let mut meta: *mut sys::ggml_context = ptr::null_mut();
         let params = sys::gguf_init_params {
-            no_alloc: true,
+            no_alloc,
             ctx: &mut meta,
         };
         let ctx = unsafe { sys::gguf_init_from_file(path.as_ptr(), params) };
@@ -73,6 +81,43 @@ impl GgufFile {
         unsafe { sys::gguf_set_val_u16(self.ctx.as_ptr(), key.as_ptr(), value) };
     }
 
+    pub fn kv_type(&self, key_id: usize) -> sys::gguf_type::Type {
+        unsafe { sys::gguf_get_kv_type(self.ctx.as_ptr(), key_id as i64) }
+    }
+
+    pub fn arr_type(&self, key_id: usize) -> sys::gguf_type::Type {
+        unsafe { sys::gguf_get_arr_type(self.ctx.as_ptr(), key_id as i64) }
+    }
+
+    pub fn arr_n(&self, key_id: usize) -> usize {
+        unsafe { sys::gguf_get_arr_n(self.ctx.as_ptr(), key_id as i64) }
+    }
+
+    pub fn arr_str(&self, key_id: usize, index: usize) -> &CStr {
+        unsafe {
+            CStr::from_ptr(sys::gguf_get_arr_str(
+                self.ctx.as_ptr(),
+                key_id as i64,
+                index,
+            ))
+        }
+    }
+
+    pub fn val_u32(&self, key_id: usize) -> u32 {
+        unsafe { sys::gguf_get_val_u32(self.ctx.as_ptr(), key_id as i64) }
+    }
+
+    pub fn meta_tensors(&self) -> impl Iterator<Item = Tensor<'_>> {
+        let first = unsafe { sys::ggml_get_first_tensor(self.meta.as_ptr()) };
+        std::iter::successors(NonNull::new(first), move |t| {
+            NonNull::new(unsafe { sys::ggml_get_next_tensor(self.meta.as_ptr(), t.as_ptr()) })
+        })
+        .map(|ptr| Tensor {
+            ptr,
+            _file: std::marker::PhantomData,
+        })
+    }
+
     fn tensor(&self, index: usize) -> *mut sys::ggml_tensor {
         let tensor =
             unsafe { sys::ggml_get_tensor(self.meta.as_ptr(), self.tensor_name(index).as_ptr()) };
@@ -86,6 +131,32 @@ impl Drop for GgufFile {
         unsafe {
             sys::gguf_free(self.ctx.as_ptr());
             sys::ggml_free(self.meta.as_ptr());
+        }
+    }
+}
+
+pub struct Tensor<'a> {
+    ptr: NonNull<sys::ggml_tensor>,
+    _file: std::marker::PhantomData<&'a GgufFile>,
+}
+
+impl Tensor<'_> {
+    pub fn name(&self) -> &CStr {
+        unsafe { CStr::from_ptr((*self.ptr.as_ptr()).name.as_ptr()) }
+    }
+
+    pub fn ty(&self) -> sys::ggml_type::Type {
+        unsafe { (*self.ptr.as_ptr()).type_ }
+    }
+
+    pub fn f32_data(&self) -> Option<&[f32]> {
+        let t = self.ptr.as_ptr();
+        unsafe {
+            if (*t).type_ != sys::ggml_type::GGML_TYPE_F32 || (*t).data.is_null() {
+                return None;
+            }
+            let n = usize::try_from(sys::ggml_nelements(t)).ok()?;
+            Some(std::slice::from_raw_parts((*t).data.cast::<f32>(), n))
         }
     }
 }

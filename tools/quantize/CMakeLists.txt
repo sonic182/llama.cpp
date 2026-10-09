@@ -7,6 +7,7 @@ set_target_properties(${TARGET} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 target_include_directories(${TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(${TARGET} PUBLIC llama-common llama ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${TARGET} PRIVATE llama-quantize-rs)
 
 if(LLAMA_TOOLS_INSTALL)
     install(TARGETS ${TARGET} LIBRARY)
@@ -22,4 +23,15 @@ target_compile_features(${TARGET} PRIVATE cxx_std_17)
 
 if(LLAMA_TOOLS_INSTALL)
     install(TARGETS ${TARGET} RUNTIME)
+endif()
+
+if (LLAMA_BUILD_TESTS)
+    find_package(Python3 COMPONENTS Interpreter)
+    if (Python3_Interpreter_FOUND)
+        add_test(NAME test-quantize-golden
+            COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/rust-golden/quantize_diff.py check $<TARGET_FILE:${TARGET}>)
+        set_tests_properties(test-quantize-golden PROPERTIES
+            LABELS main
+            ENVIRONMENT "LLAMA_QUANT_FIXTURES=${CMAKE_BINARY_DIR}/quantize-fixtures")
+    endif()
 endif()

@@ -29,11 +29,15 @@ add_library(llama-rs STATIC IMPORTED GLOBAL)
 set_target_properties(llama-rs PROPERTIES
     IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/rust/${LLAMA_RUST_CARGO_PROFILE}/libllama_rs.a
     IMPORTED_LOCATION_DEBUG ${CMAKE_BINARY_DIR}/rust/debug/libllama_rs.a
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/llama-rs/include;${CMAKE_CURRENT_SOURCE_DIR}/llama-schema/include;${CMAKE_CURRENT_SOURCE_DIR}/llama-download/include"
-    INTERFACE_LINK_LIBRARIES "${CMAKE_DL_LIBS};m;${CMAKE_THREAD_LIBS_INIT}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/llama-rs/include;${CMAKE_CURRENT_SOURCE_DIR}/llama-schema/include;${CMAKE_CURRENT_SOURCE_DIR}/llama-download/include;${CMAKE_CURRENT_SOURCE_DIR}/llama-quantize/include"
+    INTERFACE_LINK_LIBRARIES "llama;${CMAKE_DL_LIBS};m;${CMAKE_THREAD_LIBS_INIT}"
 )
 add_dependencies(llama-rs llama-rust)
 
 add_library(llama-http INTERFACE)
 target_include_directories(llama-http INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/llama-http/include)
 add_dependencies(llama-http llama-rs)
+
+add_library(llama-quantize-rs INTERFACE)
+target_include_directories(llama-quantize-rs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/llama-quantize/include)
+add_dependencies(llama-quantize-rs llama-rs)

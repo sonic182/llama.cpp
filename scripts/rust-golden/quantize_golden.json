@@ -1,0 +1,991 @@
+[
+ {
+  "args": [],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--help"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "Q4_0"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'ggml-model-Q4_0.gguf' as Q4_0\n",
+  "files": {
+   "ggml-model-Q4_0.gguf": "fd93abd9957992763c863e7e3f30934baf1e7a2e31b6c911a720cd109daed40d"
+  }
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "fd93abd9957992763c863e7e3f30934baf1e7a2e31b6c911a720cd109daed40d"
+  }
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "2",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "fd93abd9957992763c863e7e3f30934baf1e7a2e31b6c911a720cd109daed40d"
+  }
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "15",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_K using 2 threads\n",
+  "files": {
+   "out.gguf": "7f61512f1889080c73b2afd3ac7fdfe55a368e83570b20e5019829adfa734a2a"
+  }
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   " 7x",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q8_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "ff8701a45da28293b7af11a695ab33575b692e9b109a2eae6238c906c31415da"
+  }
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as F32 using 2 threads\n",
+  "files": {
+   "out.gguf": "f18837d06914bcc627d8b93c818b453823493a057041a85a8484819de8938664"
+  }
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "q3_k",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q3_K using 2 threads\n",
+  "files": {
+   "out.gguf": "1b8cf84b50f0676d7580c30d76ab0f80f337f782824b7f312de674c521bcf79d"
+  }
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "BAD"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "llama_quantize: invalid ftype 'BAD'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "llama_quantize: missing ftype\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "COPY"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as COPY\n",
+  "files": {
+   "out.gguf": "f40a10bece340d0e0dda4a908a9aa9bd86cc6a9073fdf7f3303b16ea7bed7bf2"
+  }
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "abc"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "llama_quantize: invalid nthread 'abc' (stoi)\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "99999999999"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "llama_quantize: invalid nthread '99999999999' (stoi)\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "-3"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0\n",
+  "files": {
+   "out.gguf": "fd93abd9957992763c863e7e3f30934baf1e7a2e31b6c911a720cd109daed40d"
+  }
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "stories260K-f32.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "llama_quantize: error: input and output files are the same: 'stories260K-f32.gguf'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "./stories260K-f32.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "llama_quantize: error: input and output files are the same: 'stories260K-f32.gguf'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q1_0",
+   "2"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q1_0 using 2 threads\nllama_quantize: failed to quantize model from 'stories260K-f32.gguf'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--imatrix",
+   "im.gguf",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "load_imatrix: imatrix datasets=['text.txt']\nload_imatrix: loaded 35 importance matrix entries from im.gguf computed on 4 chunks\nprepare_imatrix: have 35 importance matrix entries\n\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "a23ffd61bdcdc4488923a0a301223b79ca9ae10e688eed98c481ebe59a68805b"
+  }
+ },
+ {
+  "args": [
+   "--imatrix",
+   "im.dat",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "IQ4_NL",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "load_imatrix: imatrix datasets=['text.txt']\nload_imatrix: loaded 35 importance matrix entries from im.dat computed on 3 chunks\nprepare_imatrix: have 35 importance matrix entries\n\nTIME\nTIME\n",
+  "stderr": "gguf_init_from_reader: invalid magic characters: '#???', expected 'GGUF'\nversion: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as IQ4_NL using 2 threads\n",
+  "files": {
+   "out.gguf": "741ce5535bec9105d307b635dda38afec5e831c12cb9033a4b896e406cc4ab8d"
+  }
+ },
+ {
+  "args": [
+   "--imatrix",
+   "im.gguf",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "IQ4_NL",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "load_imatrix: imatrix datasets=['text.txt']\nload_imatrix: loaded 35 importance matrix entries from im.gguf computed on 4 chunks\nprepare_imatrix: have 35 importance matrix entries\n\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as IQ4_NL using 2 threads\n",
+  "files": {
+   "out.gguf": "d0bfc8ddf297be09c7fe6cc058d077024049bc55d247063a50ef900627db7b64"
+  }
+ },
+ {
+  "args": [
+   "--imatrix",
+   "im.gguf",
+   "--include-weights",
+   "attn",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "load_imatrix: imatrix datasets=['text.txt']\nload_imatrix: loaded 35 importance matrix entries from im.gguf computed on 4 chunks\nprepare_imatrix: have 20 importance matrix entries\n\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "b8764a6d3be6991047b3180b0b82de99bb82a20019beaa6f18dbcdc91a3dc003"
+  }
+ },
+ {
+  "args": [
+   "--imatrix",
+   "im.gguf",
+   "--include-weights",
+   "attn_q",
+   "--include-weights",
+   "blk.1.",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "load_imatrix: imatrix datasets=['text.txt']\nload_imatrix: loaded 35 importance matrix entries from im.gguf computed on 4 chunks\nprepare_imatrix: have 11 importance matrix entries\n\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "298f96416242cd6be65f473b6f285fcb876e8c72f9bbab29a14b4d6d62d1ea75"
+  }
+ },
+ {
+  "args": [
+   "--imatrix",
+   "im.dat",
+   "--exclude-weights",
+   "ffn_up",
+   "--exclude-weights",
+   "output",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "load_imatrix: imatrix datasets=['text.txt']\nload_imatrix: loaded 35 importance matrix entries from im.dat computed on 3 chunks\nprepare_imatrix: have 25 importance matrix entries\n\nTIME\nTIME\n",
+  "stderr": "gguf_init_from_reader: invalid magic characters: '#???', expected 'GGUF'\nversion: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "b060551addf58b4cf1ca5d7b286dde2fcc2eeb04a81a7e3e0e8358e79f3f0a4b"
+  }
+ },
+ {
+  "args": [
+   "--imatrix",
+   "im.gguf",
+   "--exclude-weights",
+   "blk",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "load_imatrix: imatrix datasets=['text.txt']\nload_imatrix: loaded 35 importance matrix entries from im.gguf computed on 4 chunks\n\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "fd93abd9957992763c863e7e3f30934baf1e7a2e31b6c911a720cd109daed40d"
+  }
+ },
+ {
+  "args": [
+   "--include-weights",
+   "a",
+   "--exclude-weights",
+   "b",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--include-weights",
+   "attn",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "fd93abd9957992763c863e7e3f30934baf1e7a2e31b6c911a720cd109daed40d"
+  }
+ },
+ {
+  "args": [
+   "--imatrix",
+   "missing.gguf",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "gguf_init_from_file: failed to open GGUF file 'missing.gguf' (No such file or directory)\nload_imatrix: failed to load imatrix from 'missing.gguf'\ncommon_imatrix_load_legacy: failed to open missing.gguf\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--imatrix",
+   "text.txt",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "gguf_init_from_reader: invalid magic characters: 'ther', expected 'GGUF'\ncommon_imatrix_load_legacy: failed reading name for entry 1 from text.txt\nload_imatrix: failed to load imatrix from 'text.txt'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--imatrix"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--tensor-type",
+   "attn_q=q8_0",
+   "--tensor-type",
+   "FFN_DOWN=Q5_0",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "3ef7cc769d286edec9c287ac60890d4ceb825aa375c97844157ef23b776cc27b"
+  }
+ },
+ {
+  "args": [
+   "--tensor-type",
+   "noeq",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "\nparse_tensor_type: malformed tensor type 'noeq'\n\nusage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--tensor-type",
+   "=q8_0",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "\nparse_tensor_type: missing tensor name\n\nusage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--tensor-type",
+   "attn_q=",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "\nparse_tensor_type: missing quantization type\n\nusage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--tensor-type",
+   "attn_q=zz",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "\nparse_tensor_type: invalid quantization type 'zz'\n\nusage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "parse_ggml_type: invalid ggml_type 'zz'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--tensor-type-file",
+   "tt.txt",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "1f6a6eeed6c3cbbd2954149afe2c8ddb252091ade1c46784a72d2b5ea629dfb3"
+  }
+ },
+ {
+  "args": [
+   "--tensor-type-file",
+   "missing.txt",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "\nparse_tensor_type_file: failed to open file 'missing.txt': No such file or directory\n\nusage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--output-tensor-type",
+   "q8_0",
+   "--token-embedding-type",
+   "F16",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "e0ca5e08d5db6497e2138ef242c52eaf7deefa7f723f8ace542764a73c1302d2"
+  }
+ },
+ {
+  "args": [
+   "--output-tensor-type",
+   "nope",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "parse_ggml_type: invalid ggml_type 'nope'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--token-embedding-type"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--leave-output-tensor",
+   "--pure",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_K_M",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_K_M using 2 threads\n",
+  "files": {
+   "out.gguf": "59f8c9e0ed80bd88f6e982eb4cbfb23cc7703598b87cca25f77557261f757191"
+  }
+ },
+ {
+  "args": [
+   "--allow-requantize",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q5_K_S",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q5_K_S using 2 threads\n",
+  "files": {
+   "out.gguf": "66ed769a4df768d67b88ea4395e9dab273b717de9f64980b9cd5cfe832108b6f"
+  }
+ },
+ {
+  "args": [
+   "--prune-layers",
+   "1,0,1",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "651beefcca942fa3420a71b623b2ddddca0ab6ac0c6665a6f54923c2f3684c24"
+  }
+ },
+ {
+  "args": [
+   "--prune-layers",
+   "a",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "\nparse_layer_prune: invalid layer id 'a'\n\nusage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--prune-layers",
+   "1,,2",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "\nparse_layer_prune: invalid layer id ''\n\nusage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--prune-layers",
+   " 2x",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "cd345f525292d2dddd5516ead2b262d2bc8e6d51ecad46dea30faeae404839e9"
+  }
+ },
+ {
+  "args": [
+   "--override-kv",
+   "general.name=str:foo",
+   "--override-kv",
+   "test.i=int:42x",
+   "--override-kv",
+   "test.f=float:1.5e1",
+   "--override-kv",
+   "test.b=bool:true",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "d586e899db63e4fe0056568f73a24f185c658c06cd36069f7c37f90689b75326"
+  }
+ },
+ {
+  "args": [
+   "--override-kv",
+   "general.name=str:x",
+   "--imatrix",
+   "im.gguf",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "load_imatrix: imatrix datasets=['text.txt']\nload_imatrix: loaded 35 importance matrix entries from im.gguf computed on 4 chunks\nprepare_imatrix: have 35 importance matrix entries\n\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "7de3304ecfa75b258864485c62e6d465bfe3d08ac7c71565744e1479e84a78cb"
+  }
+ },
+ {
+  "args": [
+   "--override-kv",
+   "x=bool:maybe",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "cmn  string_parse: string_parse_kv_override: invalid boolean value for KV override 'x=bool:maybe'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--override-kv",
+   "noeq",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "cmn  string_parse: string_parse_kv_override: malformed KV override 'noeq'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--override-kv",
+   "k=zz:1",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "cmn  string_parse: string_parse_kv_override: invalid type for KV override 'k=zz:1'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--override-kv",
+   "k=str:vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "cmn  string_parse: string_parse_kv_override: malformed KV override 'k=str:vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv', value cannot exceed 127 chars\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--dry-run",
+   "stories260K-f32.gguf",
+   "Q4_K"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: calculating quantization size for 'stories260K-f32.gguf' as Q4_K\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--dry-run",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: calculating quantization size for 'stories260K-f32.gguf' as Q4_0 using 2 threads\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--keep-split",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out' as Q4_0 using 2 threads\n",
+  "files": {
+   "out-00001-of-00001.gguf": "d064e73a0aceca0621a908f02fa64dee88bee00f98a234851a68622549a8273f"
+  }
+ },
+ {
+  "args": [
+   "--keep-split",
+   "stories260K-f32.gguf",
+   "Q8_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'ggml-model-Q8_0' as Q8_0 using 2 threads\n",
+  "files": {
+   "ggml-model-Q8_0-00001-of-00001.gguf": "ca0336cb3c18e781962fa9491a91021b3171463490603893dc11fe380f0b8c4c"
+  }
+ },
+ {
+  "args": [
+   "--max-buffer-size",
+   "1",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "fd93abd9957992763c863e7e3f30934baf1e7a2e31b6c911a720cd109daed40d"
+  }
+ },
+ {
+  "args": [
+   "--max-buffer-size",
+   "0",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "llama_quantize: invalid --max-buffer-size '0'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--max-buffer-size",
+   "abc",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "llama_quantize: invalid --max-buffer-size 'abc'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--max-buffer-size"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "--bogus",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "usage: BIN [--help] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights]\n       [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--tensor-type] [--tensor-type-file]\n       [--prune-layers] [--keep-split] [--override-kv] [--dry-run] [--max-buffer-size]\n       model-f32.gguf [model-quant.gguf] type [nthreads]\n\n  --allow-requantize\n                                      allow requantizing tensors that have already been quantized\n                                      WARNING: this can severely reduce quality compared to quantizing\n                                               from 16bit or 32bit!\n  --leave-output-tensor\n                                      leave output.weight un(re)quantized\n                                      increases model size but may also increase quality, especially when requantizing\n  --pure\n                                      disable k-quant mixtures and quantize all tensors to the same type\n  --imatrix file_name\n                                      use data in file_name as importance matrix for quant optimizations\n  --include-weights tensor_name\n                                      use importance matrix for this/these tensor(s)\n  --exclude-weights tensor_name\n                                      do not use importance matrix for this/these tensor(s)\n  --output-tensor-type ggml_type\n                                      use this ggml_type for the output.weight tensor\n  --token-embedding-type ggml_type\n                                      use this ggml_type for the token embeddings tensor\n  --tensor-type tensor_name=ggml_type\n                                      quantize this tensor to this ggml_type\n                                      this is an advanced option to selectively quantize tensors. may be specified multiple times.\n                                      example: --tensor-type attn_q=q8_0\n  --tensor-type-file tensor_types.txt\n                                      list of tensors to quantize to a specific ggml_type\n                                      this is an advanced option to selectively quantize a long list of tensors.\n                                      the file should use the same format as above, separated by spaces or newlines.\n  --prune-layers L0,L1,L2...\n                                      comma-separated list of layer numbers to prune from the model\n                                      WARNING: this is an advanced option, use with care.\n  --keep-split\n                                      generate quantized model in the same shards as input\n  --override-kv KEY=TYPE:VALUE\n                                      override model metadata by key in the quantized model. may be specified multiple times.\n                                      WARNING: this is an advanced option, use with care.\n  --dry-run\n                                      calculate and show the final quantization size without performing quantization\n                                      example: llama-quantize --dry-run model-f32.gguf Q4_K\n  --max-buffer-size MiB\n                                      max amount of tensor rows kept in memory while quantizing one tensor (default: 8192)\n                                      lower it to quantize models with very large tensors on a machine with little RAM\n\nnote: --include-weights and --exclude-weights cannot be used together\n\n-----------------------------------------------------------------------------\n allowed quantization types\n-----------------------------------------------------------------------------\n\n  40  or  Q1_0    :  1.125 bpw quantization\n  41  or  Q2_0    :  2.25 bpw quantization (group 64)\n   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B\n   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B\n  38  or  MXFP4_MOE :  MXFP4 MoE\n   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B\n   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B\n  19  or  IQ2_XXS :  2.06 bpw quantization\n  20  or  IQ2_XS  :  2.31 bpw quantization\n  28  or  IQ2_S   :  2.5  bpw quantization\n  29  or  IQ2_M   :  2.7  bpw quantization\n  24  or  IQ1_S   :  1.56 bpw quantization\n  31  or  IQ1_M   :  1.75 bpw quantization\n  36  or  TQ1_0   :  1.69 bpw ternarization\n  37  or  TQ2_0   :  2.06 bpw ternarization\n  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B\n  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B\n  23  or  IQ3_XXS :  3.06 bpw quantization\n  26  or  IQ3_S   :  3.44 bpw quantization\n  27  or  IQ3_M   :  3.66 bpw quantization mix\n  12  or  Q3_K    : alias for Q3_K_M\n  22  or  IQ3_XS  :  3.3 bpw quantization\n  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B\n  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B\n  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B\n  25  or  IQ4_NL  :  4.50 bpw non-linear quantization\n  30  or  IQ4_XS  :  4.25 bpw non-linear quantization\n  15  or  Q4_K    : alias for Q4_K_M\n  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B\n  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B\n  17  or  Q5_K    : alias for Q5_K_M\n  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B\n  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B\n  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B\n   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B\n   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B\n  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B\n   0  or  F32     : 26.00G              @ 7B\n          COPY    : only copy tensors, no quantizing\n",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "-x",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "llama_quantize: invalid ftype 'out.gguf'\n",
+  "files": {}
+ },
+ {
+  "args": [
+   "--imatrix",
+   "im.gguf",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "load_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.0.attn_k.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.0.attn_output.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.0.attn_q.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.0.attn_v.weight'\nload_imatrix: loaded data (size =    172, n_tokens =    512, n_chunks =      4) for 'blk.0.ffn_down.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.0.ffn_gate.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.0.ffn_up.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.1.attn_k.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.1.attn_output.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.1.attn_q.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.1.attn_v.weight'\nload_imatrix: loaded data (size =    172, n_tokens =    512, n_chunks =      4) for 'blk.1.ffn_down.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.1.ffn_gate.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.1.ffn_up.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.2.attn_k.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.2.attn_output.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.2.attn_q.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.2.attn_v.weight'\nload_imatrix: loaded data (size =    172, n_tokens =    512, n_chunks =      4) for 'blk.2.ffn_down.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.2.ffn_gate.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.2.ffn_up.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.3.attn_k.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.3.attn_output.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.3.attn_q.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.3.attn_v.weight'\nload_imatrix: loaded data (size =    172, n_tokens =    512, n_chunks =      4) for 'blk.3.ffn_down.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.3.ffn_gate.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.3.ffn_up.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.4.attn_k.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.4.attn_output.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.4.attn_q.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.4.attn_v.weight'\nload_imatrix: loaded data (size =    172, n_tokens =    512, n_chunks =      4) for 'blk.4.ffn_down.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.4.ffn_gate.weight'\nload_imatrix: loaded data (size =     64, n_tokens =    512, n_chunks =      4) for 'blk.4.ffn_up.weight'\nload_imatrix: imatrix datasets=['text.txt']\nload_imatrix: loaded 35 importance matrix entries from im.gguf computed on 4 chunks\nprepare_imatrix: have 35 importance matrix entries\n\nTIME\nTIME\n",
+  "stderr": "version: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "a23ffd61bdcdc4488923a0a301223b79ca9ae10e688eed98c481ebe59a68805b"
+  },
+  "trace": true
+ },
+ {
+  "args": [
+   "--imatrix",
+   "im.dat",
+   "stories260K-f32.gguf",
+   "out.gguf",
+   "Q4_0",
+   "2"
+  ],
+  "rc": 0,
+  "stdout": "load_imatrix: loaded data (size =     64, ncall =      3) for 'blk.0.attn_k.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.0.attn_output.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.0.attn_q.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.0.attn_v.weight'\nload_imatrix: loaded data (size =    172, ncall =      3) for 'blk.0.ffn_down.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.0.ffn_gate.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.0.ffn_up.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.1.attn_k.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.1.attn_output.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.1.attn_q.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.1.attn_v.weight'\nload_imatrix: loaded data (size =    172, ncall =      3) for 'blk.1.ffn_down.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.1.ffn_gate.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.1.ffn_up.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.2.attn_k.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.2.attn_output.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.2.attn_q.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.2.attn_v.weight'\nload_imatrix: loaded data (size =    172, ncall =      3) for 'blk.2.ffn_down.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.2.ffn_gate.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.2.ffn_up.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.3.attn_k.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.3.attn_output.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.3.attn_q.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.3.attn_v.weight'\nload_imatrix: loaded data (size =    172, ncall =      3) for 'blk.3.ffn_down.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.3.ffn_gate.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.3.ffn_up.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.4.attn_k.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.4.attn_output.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.4.attn_q.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.4.attn_v.weight'\nload_imatrix: loaded data (size =    172, ncall =      3) for 'blk.4.ffn_down.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.4.ffn_gate.weight'\nload_imatrix: loaded data (size =     64, ncall =      3) for 'blk.4.ffn_up.weight'\nload_imatrix: imatrix datasets=['text.txt']\nload_imatrix: loaded 35 importance matrix entries from im.dat computed on 3 chunks\nprepare_imatrix: have 35 importance matrix entries\n\nTIME\nTIME\n",
+  "stderr": "gguf_init_from_reader: invalid magic characters: '#???', expected 'GGUF'\nversion: V\nbuilt with C\nllama_quantize: quantizing 'stories260K-f32.gguf' to 'out.gguf' as Q4_0 using 2 threads\n",
+  "files": {
+   "out.gguf": "baa630457a293924d8b3cf5c72646b91d619065db40819652ecc0d0e3d2a4679"
+  },
+  "trace": true
+ },
+ {
+  "args": [
+   "llama-imatrix",
+   "--in-file",
+   "im.dat",
+   "-o",
+   "out.gguf"
+  ],
+  "rc": 0,
+  "stdout": "",
+  "stderr": "",
+  "files": {
+   "out.gguf": "8ae4f0b1ac404f073bfb1b6646cef0623c3912a0dd28415e64f07e198b56150a"
+  }
+ },
+ {
+  "args": [
+   "llama-imatrix",
+   "--in-file",
+   "im.gguf",
+   "-o",
+   "out.dat",
+   "--output-format",
+   "dat"
+  ],
+  "rc": 0,
+  "stdout": "",
+  "stderr": "",
+  "files": {
+   "out.dat": "6e8b06c7c021beae6b142dfa1a9a25ead16d0c5029f9eefc914db1d57dbb1b04"
+  }
+ },
+ {
+  "args": [
+   "llama-imatrix",
+   "--in-file",
+   "im.gguf",
+   "-o",
+   "out.gguf"
+  ],
+  "rc": 0,
+  "stdout": "",
+  "stderr": "",
+  "files": {
+   "out.gguf": "577e3f5b2c64402766c606d5dfec775a3789d2f353e50adb8376b6d759296710"
+  }
+ },
+ {
+  "args": [
+   "llama-imatrix",
+   "--in-file",
+   "im.gguf",
+   "--in-file",
+   "im.dat",
+   "-o",
+   "out.gguf"
+  ],
+  "rc": 0,
+  "stdout": "",
+  "stderr": "",
+  "files": {
+   "out.gguf": "ae1ceb840c74923b951651374fea6daa9f5d1547591c73d2117da3946080c1b2"
+  }
+ },
+ {
+  "args": [
+   "llama-imatrix",
+   "--in-file",
+   "text.txt",
+   "-o",
+   "out.gguf"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "",
+  "files": {}
+ },
+ {
+  "args": [
+   "llama-imatrix",
+   "--in-file",
+   "missing.gguf",
+   "-o",
+   "out.gguf"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "",
+  "files": {}
+ }
+]

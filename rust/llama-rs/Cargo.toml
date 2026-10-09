@@ -7,8 +7,11 @@ rust-version.workspace = true
 
 [lib]
 crate-type = ["staticlib", "rlib"]
+test = false
+doctest = false
 
 [dependencies]
 llama-http = { path = "../llama-http" }
 llama-download = { path = "../llama-download" }
 llama-schema = { path = "../llama-schema" }
+llama-quantize = { path = "../llama-quantize" }
