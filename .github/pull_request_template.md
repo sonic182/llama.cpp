@@ -10,4 +10,4 @@
 
 <!-- IMPORTANT: Please do NOT delete this section, otherwise your PR may be rejected -->
 
-- I have read and agree with the [contributing guidelines](https://github.com/ggml-org/llama.cpp/blob/master/CONTRIBUTING.md)
+- I have read and agree with the [contributing guidelines](https://github.com/sonic182/llama.cpp/blob/master/CONTRIBUTING.md)

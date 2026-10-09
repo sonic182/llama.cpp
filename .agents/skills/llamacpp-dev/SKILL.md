@@ -34,7 +34,7 @@ Only optimize execution speed after considering whether the work needs to exist 
 
 Prefer:
 
-> eliminate → reduce → move less data → improve locality → fuse → parallelize → vectorize → hand-optimize
+> eliminate -> reduce -> move less data -> improve locality -> fuse -> parallelize -> vectorize -> hand-optimize
 
 Do not start with assembly or intrinsics unless profiling shows that the relevant kernel materially affects end-to-end performance.
 
@@ -148,7 +148,7 @@ Memory movement may be more expensive than arithmetic.
 
 Avoid unnecessary sequences such as:
 
-`quantized → dequantized temporary → transformed → requantized`
+`quantized -> dequantized temporary -> transformed -> requantized`
 
 when equivalent work can happen directly on the compact representation.
 
@@ -281,11 +281,11 @@ Do not introduce an event loop into CPU compute paths simply because event-drive
 
 Where appropriate, prefer:
 
-`persistent worker → reusable state → repeated work`
+`persistent worker -> reusable state -> repeated work`
 
 over:
 
-`create → schedule → allocate → execute → synchronize → destroy`
+`create -> schedule -> allocate -> execute -> synchronize -> destroy`
 
 This applies to:
 

@@ -12,7 +12,7 @@ This skill reviews changes against llama.cpp's conventions and the pitfalls that
 
 In both modes the output is review notes for the user to read and act on. Present findings in the conversation unless the user asks you to post them.
 
-Before starting, read `AGENTS.md` and `CONTRIBUTING.md` if not already in context - the "Coding guidelines", "Naming guidelines" sections are the baseline this review enforces. For a diff that adds a new model architecture, also read `docs/development/HOWTO-add-model.md` and consider the dedicated `add-new-model` skill.
+Before starting, read `AGENTS.md` and `CONTRIBUTING.md` if not already in context - the "Coding guidelines" and "Naming guidelines" sections are the baseline this review enforces. For a diff that adds a new model architecture, also read `docs/development/HOWTO-add-model.md` and consider the dedicated `add-new-model` skill.
 
 ## Step 0 - Scope the diff and pick the checklists
 
@@ -133,7 +133,7 @@ Enforce the `AGENTS.md` / `CONTRIBUTING.md` coding and naming guidelines on ever
 - 4-space indentation, brackets on the same line, `void * ptr`, `int & a`, no trailing whitespace; match the surrounding style.
 - Reuse existing infrastructure over introducing new components; no new third-party dependencies, extra headers, or files unless clearly justified.
 - Keep it simple: a simpler change doing 90% is often preferable to a complex one doing 100%. Flag unnecessary templates/fancy STL; basic `for` loops are fine here.
-- Every added line should be something the contributor can explain and defend to a reviewer without AI help - flag anything that looks copied-in without understanding.
+- Every added line should be something the contributor can explain and defend to a reviewer - flag anything that looks copied-in without understanding.
 - Any mentions of Minja must be treated as blocking; see `AGENTS.md` for why.
 
 ## Reporting
