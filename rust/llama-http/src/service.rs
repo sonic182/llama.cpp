@@ -9,13 +9,14 @@ use std::{
 };
 
 use bytes::Bytes;
-use http_body_util::{BodyExt, Full, combinators::BoxBody};
+use http_body_util::{BodyExt, Full, LengthLimitError, Limited, combinators::BoxBody};
 use hyper::{
     HeaderMap, Method, Request, Response, StatusCode,
     body::{Body, Frame, Incoming},
     header::{CONTENT_TYPE, HeaderName, HeaderValue},
 };
 use tokio::sync::{mpsc, oneshot};
+use tokio_util::task::TaskTracker;
 
 use crate::{
     abi::{self, Kv, LOG_DBG, LOG_ERR, LOG_WRN, Str},
@@ -33,11 +34,14 @@ pub struct Shared {
     pub routes: RwLock<Routes>,
     pub statics: Option<StaticDir>,
     pub tls: Option<Tls>,
+    pub handlers: TaskTracker,
 }
 
 type Out = Response<BoxBody<Bytes, Infallible>>;
 
 const JSON: &str = "application/json; charset=utf-8";
+const MAX_BODY: usize = 100 * 1024 * 1024;
+const MAX_FORM_BODY: usize = 1024 * 1024;
 
 struct CancelOnDrop(Arc<AtomicBool>);
 
@@ -298,10 +302,16 @@ async fn respond(shared: Arc<Shared>, request: Request<Incoming>) -> Out {
         return text(404, JSON, body, &cors);
     };
 
-    let Ok(collected) = body.collect().await else {
-        return text(400, "text/plain", "Bad Request", &cors);
+    if body.size_hint().lower() > MAX_BODY as u64 {
+        return text(413, "text/plain", "Payload Too Large", &cors);
+    }
+    let body = match Limited::new(body, MAX_BODY).collect().await {
+        Ok(collected) => collected.to_bytes(),
+        Err(err) if err.is::<LengthLimitError>() => {
+            return text(413, "text/plain", "Payload Too Large", &cors);
+        }
+        Err(_) => return text(400, "text/plain", "Bad Request", &cors),
     };
-    let body = collected.to_bytes();
 
     let content_type = parts
         .headers
@@ -317,6 +327,9 @@ async fn respond(shared: Arc<Shared>, request: Request<Incoming>) -> Out {
     let mut multipart = None;
     if parts.method == Method::POST {
         if content_type.starts_with("application/x-www-form-urlencoded") {
+            if body.len() > MAX_FORM_BODY {
+                return text(413, "text/plain", "Payload Too Large", &cors);
+            }
             query.extend(codec::parse_query(&String::from_utf8_lossy(&body)));
             query.sort_by(|a, b| a.0.cmp(&b.0));
         } else if content_type.starts_with("multipart/form-data") {
@@ -350,7 +363,7 @@ async fn respond(shared: Arc<Shared>, request: Request<Incoming>) -> Out {
     let (head_tx, head_rx) = oneshot::channel();
     let (chunk_tx, chunk_rx) = mpsc::channel(1);
     let host = shared.host;
-    tokio::task::spawn_blocking(move || {
+    shared.handlers.spawn_blocking(move || {
         serve_blocking(host, route_id, call, cancelled, head_tx, chunk_tx);
     });
 

@@ -18,6 +18,7 @@ const CHUNKS: usize = 1;
 const WAIT_CANCEL: usize = 2;
 const ENDLESS: usize = 3;
 const FIREHOSE: usize = 4;
+const SLOW: usize = 5;
 
 static BLOCK: [u8; 64 * 1024] = [b'x'; 64 * 1024];
 
@@ -96,6 +97,10 @@ unsafe extern "C" fn dispatch(
             }
             std::thread::sleep(Duration::from_millis(5));
         }
+    }
+
+    if route == SLOW {
+        std::thread::sleep(Duration::from_millis(500));
     }
 
     let is_stream = route == CHUNKS || route == ENDLESS || route == FIREHOSE;
@@ -257,6 +262,7 @@ fn launch_with(api_keys: &[&str], ready: bool, options: Options) -> Option<TestS
         (METHOD_GET, "/wait", WAIT_CANCEL),
         (METHOD_GET, "/endless", ENDLESS),
         (METHOD_GET, "/firehose", FIREHOSE),
+        (METHOD_GET, "/slow", SLOW),
     ];
     for (method, path, id) in routes {
         assert_eq!(
@@ -398,6 +404,28 @@ fn passes_params_query_headers_and_body_to_the_handler() {
 }
 
 #[test]
+fn rejects_oversized_bodies_with_413() {
+    let server = start(&[], true);
+
+    let reply = send(
+        server.port,
+        "POST /slots/0 HTTP/1.1\r\nHost: t\r\nConnection: close\r\nContent-Length: 104857601\r\n\r\n",
+    );
+    assert_eq!(reply.status, 413);
+
+    let form = "a=".to_owned() + &"x".repeat(1024 * 1024);
+    let reply = send(
+        server.port,
+        &format!(
+            "POST /slots/0 HTTP/1.1\r\nHost: t\r\nConnection: close\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\n\r\n{form}",
+            form.len()
+        ),
+    );
+    assert_eq!(reply.status, 413);
+    assert_eq!(server.state.released.load(Ordering::Acquire), 0);
+}
+
+#[test]
 fn middleware_orders_preflight_state_auth_and_not_found() {
     let server = start(&["secret"], false);
 
@@ -475,6 +503,24 @@ fn client_disconnect_cancels_a_pending_buffered_handler() {
     wait_for("release", || {
         server.state.released.load(Ordering::Acquire) == 1
     });
+}
+
+#[test]
+fn join_waits_for_a_handler_that_outlives_its_client() {
+    let server = start(&[], true);
+    let mut stream = TcpStream::connect(("127.0.0.1", server.port)).unwrap();
+    stream
+        .write_all(b"GET /slow HTTP/1.1\r\nHost: t\r\n\r\n")
+        .unwrap();
+    std::thread::sleep(Duration::from_millis(100));
+    drop(stream);
+    std::thread::sleep(Duration::from_millis(100));
+    let ptr = server.ptr.cast();
+    unsafe {
+        llama_http_server_stop(ptr);
+        llama_http_server_join(ptr);
+    }
+    assert_eq!(server.state.released.load(Ordering::Acquire), 1);
 }
 
 #[test]

@@ -19,7 +19,7 @@ use tokio::{
     runtime::{Builder, Runtime},
     task::{JoinHandle, JoinSet},
 };
-use tokio_util::sync::CancellationToken;
+use tokio_util::{sync::CancellationToken, task::TaskTracker};
 
 use crate::{
     abi::{LOG_DBG, LOG_ERR},
@@ -138,6 +138,7 @@ impl Server {
                 routes: RwLock::new(Routes::default()),
                 statics,
                 tls,
+                handlers: TaskTracker::new(),
             }),
             cancel: CancellationToken::new(),
             main: Mutex::new(None),
@@ -193,6 +194,8 @@ impl Server {
         let handle = self.main.lock().unwrap().take();
         if let (Some(handle), Some(runtime)) = (handle, self.runtime.as_ref()) {
             let _ = runtime.block_on(handle);
+            self.shared.handlers.close();
+            runtime.block_on(self.shared.handlers.wait());
         }
     }
 }
