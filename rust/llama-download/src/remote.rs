@@ -4,10 +4,12 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
-use reqwest::header::{
+use http::Method;
+use http::header::{
     AUTHORIZATION, CONTENT_LENGTH, HeaderMap, HeaderName, HeaderValue, RANGE, USER_AGENT,
 };
 
+use crate::client::Client;
 use crate::log::{self, Level};
 
 const MAX_ATTEMPTS: u32 = 3;
@@ -76,7 +78,11 @@ fn runtime() -> Result<tokio::runtime::Runtime, Error> {
         .map_err(failed)
 }
 
-fn client(headers: &[(String, String)], bearer: Option<&str>) -> Result<reqwest::Client, Error> {
+fn client(
+    headers: &[(String, String)],
+    bearer: Option<&str>,
+    io_timeout: Duration,
+) -> Result<Client, Error> {
     let mut map = HeaderMap::new();
     for (name, value) in headers {
         let name = HeaderName::from_bytes(name.as_bytes()).map_err(failed)?;
@@ -89,11 +95,7 @@ fn client(headers: &[(String, String)], bearer: Option<&str>) -> Result<reqwest:
         let value = HeaderValue::from_str(&format!("Bearer {token}")).map_err(failed)?;
         map.append(AUTHORIZATION, value);
     }
-    reqwest::Client::builder()
-        .default_headers(map)
-        .connect_timeout(CONNECT_TIMEOUT)
-        .build()
-        .map_err(failed)
+    Ok(Client::new(map, CONNECT_TIMEOUT, io_timeout))
 }
 
 fn content_length(headers: &HeaderMap, func: &str) -> Option<u64> {
@@ -182,23 +184,11 @@ fn write_etag(path: &Path, etag: &str) {
     }
 }
 
-async fn get_body(
-    client: &reqwest::Client,
-    url: &str,
-    timeout: Duration,
-    max_size: usize,
-) -> Option<(u16, Vec<u8>)> {
-    let mut response = tokio::time::timeout(timeout, client.get(url).send())
-        .await
-        .ok()?
-        .ok()?;
-    let status = response.status().as_u16();
+async fn get_body(client: &Client, url: &str, max_size: usize) -> Option<(u16, Vec<u8>)> {
+    let mut response = client.send(Method::GET, url, HeaderMap::new()).await.ok()?;
+    let status = response.status;
     let mut body = Vec::new();
-    while let Some(chunk) = tokio::time::timeout(timeout, response.chunk())
-        .await
-        .ok()?
-        .ok()?
-    {
+    while let Some(chunk) = response.chunk().await.ok()? {
         body.extend_from_slice(&chunk);
         if max_size != 0 && body.len() > max_size {
             return None;
@@ -208,10 +198,13 @@ async fn get_body(
 }
 
 pub fn get_content(url: &str, params: &ContentParams) -> Result<(u16, Vec<u8>), Error> {
-    let client = client(&params.headers, None)?;
-    let timeout = params.timeout.unwrap_or(READ_TIMEOUT);
+    let client = client(
+        &params.headers,
+        None,
+        params.timeout.unwrap_or(READ_TIMEOUT),
+    )?;
     runtime()?
-        .block_on(get_body(&client, url, timeout, params.max_size))
+        .block_on(get_body(&client, url, params.max_size))
         .ok_or_else(|| Error::Failed("error: cannot make GET request".into()))
 }
 
@@ -224,7 +217,7 @@ fn pull_failed(reason: impl std::fmt::Display, status: i32) -> bool {
 }
 
 async fn pull(
-    client: &reqwest::Client,
+    client: &Client,
     url: &str,
     tmp: &Path,
     supports_ranges: bool,
@@ -241,16 +234,19 @@ async fn pull(
         );
         return false;
     };
-    let mut request = client.get(url);
+    let mut extra = HeaderMap::new();
     if supports_ranges && progress.downloaded > 0 {
-        request = request.header(RANGE, format!("bytes={}-", progress.downloaded));
+        let range = format!("bytes={}-", progress.downloaded);
+        match HeaderValue::from_str(&range) {
+            Ok(value) => extra.insert(RANGE, value),
+            Err(error) => return pull_failed(error, -1),
+        };
     }
-    let mut response = match tokio::time::timeout(READ_TIMEOUT, request.send()).await {
-        Ok(Ok(response)) => response,
-        Ok(Err(error)) => return pull_failed(error, -1),
-        Err(_) => return pull_failed("timed out", -1),
+    let mut response = match client.send(Method::GET, url, extra).await {
+        Ok(response) => response,
+        Err(error) => return pull_failed(error, -1),
     };
-    let status = response.status().as_u16();
+    let status = response.status;
     if progress.downloaded > 0 && status != 206 {
         log::emit(
             Level::Warn,
@@ -268,17 +264,16 @@ async fn pull(
         return false;
     }
     if progress.total == 0
-        && let Some(length) = content_length(response.headers(), "common_pull_file")
+        && let Some(length) = content_length(&response.headers, "common_pull_file")
     {
         progress.total = progress.downloaded + length;
     }
     let mut step = 0u64;
     loop {
-        let chunk = match tokio::time::timeout(READ_TIMEOUT, response.chunk()).await {
-            Ok(Ok(Some(chunk))) => chunk,
-            Ok(Ok(None)) => return true,
-            Ok(Err(error)) => return pull_failed(error, i32::from(status)),
-            Err(_) => return pull_failed("timed out", i32::from(status)),
+        let chunk = match response.chunk().await {
+            Ok(Some(chunk)) => chunk,
+            Ok(None) => return true,
+            Err(error) => return pull_failed(error, i32::from(status)),
         };
         if file.write_all(&chunk).is_err() {
             log::emit(
@@ -314,7 +309,7 @@ fn online(url: &str, path: &Path, opts: &Options, skip_etag: bool) -> Result<u16
         return Ok(304);
     }
 
-    let client = client(&opts.headers, opts.bearer_token.as_deref())?;
+    let client = client(&opts.headers, opts.bearer_token.as_deref(), READ_TIMEOUT)?;
     let runtime = runtime()?;
     let last_etag = if file_exists {
         read_etag(path)
@@ -329,29 +324,26 @@ fn online(url: &str, path: &Path, opts: &Options, skip_etag: bool) -> Result<u16
         String::new()
     };
 
-    let head = runtime.block_on(async {
-        tokio::time::timeout(READ_TIMEOUT, client.head(url).send())
-            .await
-            .ok()?
-            .ok()
-    });
+    let head = runtime
+        .block_on(client.send(Method::HEAD, url, HeaderMap::new()))
+        .ok();
     let head = match head {
-        Some(head) if head.status().is_success() => head,
+        Some(head) if (200..300).contains(&head.status) => head,
         other => {
             if file_exists {
                 return Ok(304);
             }
             return Err(match other {
-                Some(head) => Error::Status(head.status().as_u16()),
+                Some(head) => Error::Status(head.status),
                 None => Error::Failed(format!("HEAD request to {url} failed")),
             });
         }
     };
 
-    let status = head.status().as_u16();
-    let etag = header_text(head.headers(), "etag");
+    let status = head.status;
+    let etag = header_text(&head.headers, "etag");
     let supports_ranges = head
-        .headers()
+        .headers
         .get("accept-ranges")
         .is_some_and(|value| value.as_bytes() != b"none");
 
@@ -393,7 +385,7 @@ fn online(url: &str, path: &Path, opts: &Options, skip_etag: bool) -> Result<u16
     let tmp = with_suffix(path, ".downloadInProgress");
     let mut progress = Progress {
         url: url.to_string(),
-        total: content_length(head.headers(), "common_download_file_single_online").unwrap_or(0),
+        total: content_length(&head.headers, "common_download_file_single_online").unwrap_or(0),
         ..Default::default()
     };
     if let Some(callback) = opts.callback {

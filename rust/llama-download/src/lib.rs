@@ -1,6 +1,7 @@
 //! Model download and Hugging Face cache, ported from common/download.cpp and common/hf-cache.cpp.
 
 pub mod cache;
+mod client;
 pub mod docker;
 pub mod ffi;
 pub mod gguf;
