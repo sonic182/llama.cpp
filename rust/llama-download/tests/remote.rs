@@ -5,7 +5,7 @@ use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use llama_download::remote::{self, Options};
+use llama_download::remote::{self, ContentParams, Options};
 
 const URL: &str =
     "https://huggingface.co/ggml-org/test-model-stories260K/resolve/main/stories260K-f32.gguf";
@@ -119,19 +119,53 @@ fn slow_response_with_steady_progress_is_not_a_total_timeout() {
 }
 
 #[test]
-fn silent_server_fails_after_read_timeout() {
-    let (base, _) = serve(|_, _| thread::sleep(Duration::from_secs(60)));
+fn stall_longer_than_five_seconds_does_not_fail_the_download() {
+    let (base, _) = serve(|request, stream| {
+        thread::sleep(Duration::from_secs(6));
+        hello(request, stream);
+    });
     let tmp = tempfile::tempdir().unwrap();
-    let start = Instant::now();
+    let path = tmp.path().join("m.gguf");
     let url = format!("{base}/model.gguf");
-    assert!(
-        remote::download_file(&url, &tmp.path().join("m.gguf"), &Options::default(), false)
-            .is_err()
+    assert_eq!(
+        remote::download_file(&url, &path, &Options::default(), false),
+        Ok(200)
     );
+    assert_eq!(fs::read(&path).unwrap(), b"hello");
+}
+
+#[test]
+fn silent_server_fails_after_the_requested_timeout() {
+    let (base, _) = serve(|_, _| thread::sleep(Duration::from_secs(60)));
+    let start = Instant::now();
+    let params = ContentParams {
+        timeout: Some(Duration::from_secs(1)),
+        ..ContentParams::default()
+    };
+    assert!(remote::get_content(&format!("{base}/x"), &params).is_err());
     let elapsed = start.elapsed();
     assert!(
-        elapsed >= Duration::from_secs(4) && elapsed < Duration::from_secs(20),
+        elapsed >= Duration::from_secs(1) && elapsed < Duration::from_secs(10),
         "{elapsed:?}"
+    );
+}
+
+#[test]
+fn url_credentials_are_sent_as_basic_auth() {
+    let (base, requests) = serve(hello);
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("model.gguf");
+    let url = format!("{}/model.gguf", base.replace("http://", "http://user:pw@"));
+    assert_eq!(
+        remote::download_file(&url, &path, &Options::default(), false),
+        Ok(200)
+    );
+    let requests: Vec<String> = requests.try_iter().collect();
+    assert_eq!(requests.len(), 2);
+    assert!(
+        requests
+            .iter()
+            .all(|r| r.contains("\r\nauthorization: basic dxnlcjpwdw==\r\n"))
     );
 }
 

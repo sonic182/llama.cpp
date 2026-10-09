@@ -113,6 +113,31 @@ fn tls_connector() -> io::Result<TlsConnector> {
         .map_err(io::Error::other)
 }
 
+fn basic_auth(uri: &Uri) -> Option<HeaderValue> {
+    let (userinfo, _) = uri.authority()?.as_str().rsplit_once('@')?;
+    let value = format!("Basic {}", base64(userinfo.as_bytes()));
+    HeaderValue::from_str(&value).ok()
+}
+
+fn base64(input: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(input.len().div_ceil(3) * 4);
+    for chunk in input.chunks(3) {
+        let n = chunk
+            .iter()
+            .enumerate()
+            .fold(0u32, |n, (i, &b)| n | u32::from(b) << (16 - 8 * i));
+        for i in 0..4 {
+            out.push(if i <= chunk.len() {
+                char::from(TABLE[(n >> (18 - 6 * i) & 63) as usize])
+            } else {
+                '='
+            });
+        }
+    }
+    out
+}
+
 #[derive(PartialEq, Eq)]
 struct Origin {
     tls: bool,
@@ -246,6 +271,11 @@ impl Client {
         let mut headers = self.headers.clone();
         headers.extend(extra);
         let mut origin = Origin::of(&uri)?;
+        if !headers.contains_key(AUTHORIZATION)
+            && let Some(auth) = basic_auth(&uri)
+        {
+            headers.insert(AUTHORIZATION, auth);
+        }
 
         for _ in 0..=MAX_REDIRECTS {
             let io = self.connect(&origin).await?;

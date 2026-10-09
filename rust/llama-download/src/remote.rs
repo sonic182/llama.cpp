@@ -15,7 +15,7 @@ use crate::log::{self, Level};
 const MAX_ATTEMPTS: u32 = 3;
 const RETRY_DELAY: Duration = Duration::from_secs(2);
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(300);
-const READ_TIMEOUT: Duration = Duration::from_secs(5);
+const READ_TIMEOUT: Duration = Duration::from_secs(300);
 const DEFAULT_USER_AGENT: &str = "llama-cpp";
 
 #[derive(Debug, Default, Clone)]
