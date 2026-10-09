@@ -85,7 +85,3 @@ Reference: `examples/model-conversion/README.md`.
 5. Sanity-check across `tools/cli`, `tools/completion`, `tools/imatrix`, `tools/quantize`, and `tools/server`.
 6. CPU backend first; other backends (CUDA, Metal, ...) can be separate follow-up PRs per `CONTRIBUTING.md`.
 7. Re-review every changed file against the coding/naming guidelines in `AGENTS.md` (and `CONTRIBUTING.md`'s "Coding guidelines"/"Naming guidelines" sections) - this is a separate pass from functional testing and is just as important: no forced line-wrapping, no unicode punctuation, minimal/non-redundant comments, `snake_case` naming (`kebab-case` for file names), matching indentation/brace style, etc.
-
-## Before opening a PR
-
-- Run the `code-review` skill on the diff first - it catches the convention and scope issues reviewers flag most often, and it's recommended to do this locally before pushing the PR.
