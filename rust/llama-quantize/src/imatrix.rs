@@ -101,8 +101,8 @@ pub fn load(fname: &[u8], log: &mut dyn FnMut(&[u8])) -> Option<Imatrix> {
         imatrix.entries.insert(
             name,
             Entry {
-                sums: sums.to_vec(),
-                counts: counts.iter().map(|&c| c.round() as i64).collect(),
+                sums,
+                counts: counts.into_iter().map(|c| c.round() as i64).collect(),
             },
         );
     }

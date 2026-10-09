@@ -94,6 +94,7 @@ impl GgufFile {
     }
 
     pub fn arr_str(&self, key_id: usize, index: usize) -> &CStr {
+        assert!(index < self.arr_n(key_id), "gguf array index out of range");
         unsafe {
             CStr::from_ptr(sys::gguf_get_arr_str(
                 self.ctx.as_ptr(),
@@ -149,15 +150,23 @@ impl Tensor<'_> {
         unsafe { (*self.ptr.as_ptr()).type_ }
     }
 
-    pub fn f32_data(&self) -> Option<&[f32]> {
+    pub fn f32_data(&self) -> Option<Vec<f32>> {
         let t = self.ptr.as_ptr();
-        unsafe {
+        let bytes = unsafe {
             if (*t).type_ != sys::ggml_type::GGML_TYPE_F32 || (*t).data.is_null() {
                 return None;
             }
             let n = usize::try_from(sys::ggml_nelements(t)).ok()?;
-            Some(std::slice::from_raw_parts((*t).data.cast::<f32>(), n))
-        }
+            std::slice::from_raw_parts((*t).data.cast::<u8>(), n.checked_mul(4)?)
+        };
+        Some(
+            bytes
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|b| f32::from_ne_bytes(*b))
+                .collect(),
+        )
     }
 }
 
