@@ -148,6 +148,11 @@ option(LLAMA_LLGUIDANCE "llama-common: include LLGuidance library for structured
 
 # rust
 option(LLAMA_RUST "llama: build the Rust workspace and its C shim" ON)
+set(LLAMA_RUST_CARGO_PROFILE "cmake" CACHE STRING "llama: cargo profile for non-Debug builds (cmake: release with incremental compilation, release: full optimization)")
+
+if (NOT DEFINED CMAKE_LINK_DEPENDS_NO_SHARED)
+    set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
+endif()
 
 
 # Required for relocatable CMake package

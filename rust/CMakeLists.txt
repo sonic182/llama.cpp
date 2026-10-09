@@ -14,7 +14,7 @@ add_custom_target(llama-rust ALL
     COMMAND ${CMAKE_COMMAND} -E env
         LLAMA_LIB_DIR=$<TARGET_FILE_DIR:llama-ext-c>
         CARGO_TARGET_DIR=${CMAKE_BINARY_DIR}/rust
-        ${CARGO_EXECUTABLE} build --workspace $<$<NOT:$<CONFIG:Debug>>:--release>
+        ${CARGO_EXECUTABLE} build --workspace --profile $<IF:$<CONFIG:Debug>,dev,${LLAMA_RUST_CARGO_PROFILE}>
         ${LLAMA_RUST_CARGO_FEATURES}
         ${LLAMA_RUST_CARGO_EXCLUDES}
         --manifest-path ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml
@@ -27,7 +27,7 @@ add_dependencies(llama-rust llama llama-ext-c)
 
 add_library(llama-rs STATIC IMPORTED GLOBAL)
 set_target_properties(llama-rs PROPERTIES
-    IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/rust/release/libllama_rs.a
+    IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/rust/${LLAMA_RUST_CARGO_PROFILE}/libllama_rs.a
     IMPORTED_LOCATION_DEBUG ${CMAKE_BINARY_DIR}/rust/debug/libllama_rs.a
     INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/llama-rs/include;${CMAKE_CURRENT_SOURCE_DIR}/llama-schema/include;${CMAKE_CURRENT_SOURCE_DIR}/llama-download/include"
     INTERFACE_LINK_LIBRARIES "${CMAKE_DL_LIBS};m;${CMAKE_THREAD_LIBS_INIT}"

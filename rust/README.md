@@ -25,7 +25,7 @@ cmake -B build-rust -DLLAMA_RUST=ON
 cmake --build build-rust
 ```
 
-`cargo` runs from the `llama-rust` CMake target and links against the libraries in `build-rust/bin`. To run cargo by hand, build the C++ side first and point `LLAMA_LIB_DIR` at the libraries:
+`cargo` runs from the `llama-rust` CMake target and links against the libraries in `build-rust/bin`. Non-Debug builds use the cargo profile `cmake` (release with incremental compilation, `rust/Cargo.toml`), so editing Rust and rebuilding takes seconds; pass `-DLLAMA_RUST_CARGO_PROFILE=release` for a fully optimized build, for example when packaging. CMake also defaults `CMAKE_LINK_DEPENDS_NO_SHARED` to ON, so a change in `libllama-common` does not relink every executable. To run cargo by hand, build the C++ side first and point `LLAMA_LIB_DIR` at the libraries:
 
 ```sh
 cd rust

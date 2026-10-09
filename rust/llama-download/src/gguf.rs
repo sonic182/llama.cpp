@@ -1,11 +1,3 @@
-use std::sync::LazyLock;
-
-use regex::Regex;
-
-static SPLIT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^(.+)-([0-9]{5})-(?i:of)-([0-9]{5})$").unwrap());
-static TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[-.]([A-Za-z0-9_]+)$").unwrap());
-
 const SIDECAR_MARKERS: [&str; 6] = ["mmproj", "imatrix", "mtp-", "eagle3-", "dflash-", "dspark-"];
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -16,22 +8,57 @@ pub struct SplitInfo {
     pub count: u32,
 }
 
+fn five_digits(bytes: &[u8]) -> Option<u32> {
+    if bytes.len() == 5 && bytes.iter().all(u8::is_ascii_digit) {
+        std::str::from_utf8(bytes).ok()?.parse().ok()
+    } else {
+        None
+    }
+}
+
+fn split_suffix(stem: &str) -> Option<(&str, u32, u32)> {
+    const SUFFIX: usize = "-00001-of-00002".len();
+    let cut = stem.len().checked_sub(SUFFIX)?;
+    let suffix = &stem.as_bytes()[cut..];
+    if suffix[0] != b'-'
+        || suffix[6] != b'-'
+        || suffix[9] != b'-'
+        || !suffix[7..9].eq_ignore_ascii_case(b"of")
+    {
+        return None;
+    }
+    let prefix = &stem[..cut];
+    if prefix.is_empty() || prefix.contains('\n') {
+        return None;
+    }
+    Some((
+        prefix,
+        five_digits(&suffix[1..6])?,
+        five_digits(&suffix[10..15])?,
+    ))
+}
+
+fn tag_of(prefix: &str) -> String {
+    let start = prefix
+        .char_indices()
+        .rev()
+        .find(|&(_, c)| !(c.is_ascii_alphanumeric() || c == '_'))
+        .map_or(0, |(i, c)| i + c.len_utf8());
+    match prefix[..start].chars().next_back() {
+        Some('-' | '.') if start < prefix.len() => prefix[start..].to_ascii_uppercase(),
+        _ => String::new(),
+    }
+}
+
 pub fn split_info(path: &str) -> SplitInfo {
     let Some(stem) = path.strip_suffix(".gguf") else {
         return SplitInfo::default();
     };
-    let (prefix, index, count) = match SPLIT.captures(stem) {
-        Some(c) => (
-            c[1].to_string(),
-            c[2].parse::<u32>().unwrap(),
-            c[3].parse::<u32>().unwrap(),
-        ),
+    let (prefix, index, count) = match split_suffix(stem) {
+        Some((prefix, index, count)) => (prefix.to_string(), index, count),
         None => (stem.to_string(), 1, 1),
     };
-    let tag = TAG
-        .captures(&prefix)
-        .map(|c| c[1].to_ascii_uppercase())
-        .unwrap_or_default();
+    let tag = tag_of(&prefix);
     SplitInfo {
         prefix,
         tag,
