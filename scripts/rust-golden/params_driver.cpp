@@ -1,6 +1,9 @@
 #include "arg.h"
 #include "common.h"
 #include "log.h"
+#include "params-serde.h"
+
+#include "llama_args.h"
 
 #include "ggml-backend.h"
 
@@ -168,6 +171,51 @@ static json options(llama_example ex) {
     return j;
 }
 
+static std::string first_difference(const json & a, const json & b, const std::string & path) {
+    if (a.is_object() && b.is_object()) {
+        for (auto it = a.begin(); it != a.end(); ++it) {
+            if (!b.contains(it.key())) {
+                return path + "." + it.key();
+            }
+            auto diff = first_difference(it.value(), b.at(it.key()), path + "." + it.key());
+            if (!diff.empty()) {
+                return diff;
+            }
+        }
+        return a.size() == b.size() ? "" : path;
+    }
+    if (a.is_array() && b.is_array() && a.size() == b.size()) {
+        for (size_t i = 0; i < a.size(); i++) {
+            auto diff = first_difference(a[i], b[i], path + "[" + std::to_string(i) + "]");
+            if (!diff.empty()) {
+                return diff;
+            }
+        }
+        return "";
+    }
+    return a.dump() == b.dump() ? "" : path;
+}
+
+static void check_roundtrip(const common_params & params) {
+    auto data = common_params_to_cbor(params);
+    uint8_t * out = nullptr;
+    size_t out_len = 0;
+    bool ok = llama_args_params_roundtrip(data.data(), data.size(), &out, &out_len);
+    std::vector<uint8_t> back_data(out, out + out_len);
+    llama_args_free_buffer(out, out_len);
+    if (!ok) {
+        fprintf(stderr, "params_driver: Params rejected the C++ params: %s\n", std::string(back_data.begin(), back_data.end()).c_str());
+        exit(3);
+    }
+    common_params back{};
+    common_params_from_cbor(back_data.data(), back_data.size(), back);
+    auto diff = first_difference(dump(params), dump(back), "params");
+    if (!diff.empty()) {
+        fprintf(stderr, "params_driver: round trip through Params changed %s\n", diff.c_str());
+        exit(3);
+    }
+}
+
 int main(int argc, char ** argv) {
     if (argc == 3 && strcmp(argv[1], "--options") == 0) {
         printf("%s\n", options((llama_example) example_from_name(argv[2])).dump(1).c_str());
@@ -190,6 +238,7 @@ int main(int argc, char ** argv) {
     json before = dump(params);
     bool ok = common_params_parse((int) args.size(), args.data(), params, ex);
     common_log_flush(common_log_main());
+    check_roundtrip(params);
 
     std::ofstream out(out_path);
     out << json({{"ok", ok}, {"before", before}, {"after", dump(params)}}).dump() << "\n";

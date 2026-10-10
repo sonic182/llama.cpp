@@ -299,6 +299,7 @@ set_tests_properties(test-thread-safety PROPERTIES FIXTURES_REQUIRED test-downlo
 llama_build_and_test(test-arg-parser.cpp)
 
 llama_build(${PROJECT_SOURCE_DIR}/scripts/rust-golden/params_driver.cpp)
+target_include_directories(params_driver PRIVATE ${PROJECT_SOURCE_DIR}/rust/llama-args/include)
 find_package(Python3 COMPONENTS Interpreter)
 if (Python3_Interpreter_FOUND)
     add_test(NAME test-params-golden

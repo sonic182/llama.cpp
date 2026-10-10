@@ -14,6 +14,7 @@ doctest = false
 llguidance = ["llama-sampling/llguidance"]
 
 [dependencies]
+llama-args = { path = "../llama-args" }
 llama-http = { path = "../llama-http" }
 llama-download = { path = "../llama-download" }
 llama-schema = { path = "../llama-schema" }

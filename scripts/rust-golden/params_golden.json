@@ -4230,8 +4230,8 @@
    "new_files": [],
    "stdout": "",
    "stderr": [
-    "built with GNU 14.2.0 for Linux x86_64",
-    "version: 0.5.0-dev (build 2198, commit dac4593e2)"
+    "built with $COMPILER",
+    "version: $VERSION"
    ]
   }
  },

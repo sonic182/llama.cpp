@@ -18,6 +18,7 @@ C++ parser, before the Rust port replaces it.
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -257,6 +258,11 @@ def flatten(value, path, out):
     return out
 
 
+def normalize(text):
+    text = re.sub(r"^version: .*$", "version: $VERSION", text, flags=re.M)
+    return re.sub(r"^built with .*$", "built with $COMPILER", text, flags=re.M)
+
+
 def run_case(driver, case, default_threads):
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
@@ -295,8 +301,8 @@ def run_case(driver, case, default_threads):
             result["params"] = changed
         after = {str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*")}
         result["new_files"] = sorted(after - before)
-        result["stdout"] = proc.stdout.replace(tmp, "$TMP")
-        result["stderr"] = sorted(proc.stderr.replace(tmp, "$TMP").splitlines())
+        result["stdout"] = normalize(proc.stdout.replace(tmp, "$TMP"))
+        result["stderr"] = sorted(normalize(proc.stderr.replace(tmp, "$TMP")).splitlines())
         return result
 
 
