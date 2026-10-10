@@ -254,7 +254,8 @@ pub async fn handle(shared: Arc<Shared>, request: Request<Incoming>) -> Result<O
 
 async fn respond(shared: Arc<Shared>, request: Request<Incoming>) -> Out {
     let (parts, body) = request.into_parts();
-    let path = parts.uri.path().to_owned();
+    let path =
+        String::from_utf8_lossy(&codec::decode(parts.uri.path().as_bytes(), false)).into_owned();
     let mut cors = cors_headers(&shared, &parts.headers);
 
     if parts.method == Method::OPTIONS {
@@ -456,7 +457,10 @@ async fn parse_multipart(content_type: &str, body: Bytes) -> Result<Multipart, m
     };
     while let Some(field) = parser.next_field().await? {
         let key = field.name().unwrap_or_default().as_bytes().to_vec();
-        let filename = field.file_name().map(|name| name.as_bytes().to_vec());
+        let filename = field
+            .file_name()
+            .filter(|name| !name.is_empty())
+            .map(|name| name.as_bytes().to_vec());
         let content_type = field
             .content_type()
             .map(|mime| mime.to_string().into_bytes())

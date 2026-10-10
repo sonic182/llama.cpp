@@ -1,6 +1,6 @@
 use std::{
     io,
-    net::ToSocketAddrs,
+    net::{SocketAddr, ToSocketAddrs},
     os::unix::fs::FileTypeExt,
     path::Path,
     sync::{Arc, Mutex, RwLock},
@@ -81,10 +81,31 @@ fn clear_stale_socket(path: &Path) -> io::Result<()> {
 }
 
 fn bind_tcp(host: &str, port: u16, settings: &Settings, v6only: bool) -> io::Result<TcpListener> {
-    let addr = (host, port)
-        .to_socket_addrs()?
-        .next()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "address did not resolve"))?;
+    let mut last = io::Error::new(io::ErrorKind::NotFound, "address did not resolve");
+    for addr in (host, port).to_socket_addrs()? {
+        match bind_addr(addr, settings, v6only) {
+            Ok(listener) => return Ok(listener),
+            Err(err) => last = err,
+        }
+    }
+    Err(last)
+}
+
+fn bind_unix(host: &str) -> io::Result<UnixListener> {
+    #[cfg(target_os = "linux")]
+    if let Some(name) = host.strip_prefix('@').filter(|name| !name.is_empty()) {
+        use std::os::linux::net::SocketAddrExt;
+        let addr = std::os::unix::net::SocketAddr::from_abstract_name(name)?;
+        let listener = std::os::unix::net::UnixListener::bind_addr(&addr)?;
+        listener.set_nonblocking(true)?;
+        return UnixListener::from_std(listener);
+    }
+    let path = Path::new(host);
+    clear_stale_socket(path)?;
+    UnixListener::bind(path)
+}
+
+fn bind_addr(addr: SocketAddr, settings: &Settings, v6only: bool) -> io::Result<TcpListener> {
     let socket = Socket::new(Domain::for_address(addr), Type::STREAM, None)?;
     socket.set_reuse_address(true)?;
     if settings.reuse_port {
@@ -158,21 +179,24 @@ impl Server {
         let runtime = self.runtime.as_ref().expect("runtime lives until drop");
         let settings = &self.shared.settings;
         let n_tcp = settings.hosts.iter().filter(|h| !is_unix_socket(h)).count();
+        let port = u16::try_from(settings.port).map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("invalid port {}", settings.port),
+            )
+        })?;
 
         let (listeners, port) = runtime.block_on(async {
             let mut listeners = Vec::new();
-            let mut bound_port = settings.port;
+            let mut bound_port = port;
             for host in &settings.hosts {
                 if is_unix_socket(host) {
-                    let path = Path::new(host);
-                    clear_stale_socket(path)?;
-                    listeners.push(Listener::Unix(UnixListener::bind(path)?));
+                    listeners.push(Listener::Unix(bind_unix(host)?));
                     continue;
                 }
-                let listener = bind_tcp(host, settings.port, settings, n_tcp > 1).map_err(|e| {
-                    io::Error::new(e.kind(), format!("{host}:{}: {e}", settings.port))
-                })?;
-                if settings.port == 0 && bound_port == 0 {
+                let listener = bind_tcp(host, port, settings, n_tcp > 1)
+                    .map_err(|e| io::Error::new(e.kind(), format!("{host}:{port}: {e}")))?;
+                if port == 0 && bound_port == 0 {
                     bound_port = listener.local_addr()?.port();
                 }
                 listeners.push(Listener::Tcp(listener));

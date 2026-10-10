@@ -15,7 +15,7 @@ pub struct Cors {
 
 pub struct Settings {
     pub hosts: Vec<String>,
-    pub port: u16,
+    pub port: i32,
     pub prefix: String,
     pub api_keys: Vec<Vec<u8>>,
     pub public_paths: HashSet<String>,
@@ -41,7 +41,7 @@ impl Settings {
     pub unsafe fn from_raw(raw: &abi::Config) -> Self {
         Settings {
             hosts: unsafe { strings(raw.hosts, raw.n_hosts) },
-            port: u16::try_from(raw.port).unwrap_or(0),
+            port: raw.port,
             prefix: unsafe { lossy(raw.api_prefix) },
             api_keys: unsafe { slice(raw.api_keys, raw.n_api_keys) }
                 .iter()

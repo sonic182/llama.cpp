@@ -73,6 +73,10 @@ unsafe extern "C" fn dispatch(
     for (key, value) in pairs(request.headers, request.n_headers) {
         data.push_str(&format!("header:{key}={value}\n"));
     }
+    for (key, value) in pairs(request.fields, request.n_fields) {
+        data.push_str(&format!("field:{key}={value}\n"));
+    }
+    data.push_str(&format!("files={}\n", request.n_files));
 
     let mut exchange = Box::new(Exchange {
         state,
@@ -204,6 +208,7 @@ struct Options<'a> {
     ssl: (&'a str, &'a str),
     write_timeout_sec: i32,
     host: Option<&'a str>,
+    port: i32,
 }
 
 fn launch_with(api_keys: &[&str], ready: bool, options: Options) -> Option<TestServer> {
@@ -212,6 +217,7 @@ fn launch_with(api_keys: &[&str], ready: bool, options: Options) -> Option<TestS
         ssl: (ssl_cert, ssl_key),
         write_timeout_sec,
         host,
+        port,
     } = options;
     let state = Box::<State>::default();
     let ready = Box::new(AtomicBool::new(ready));
@@ -221,7 +227,7 @@ fn launch_with(api_keys: &[&str], ready: bool, options: Options) -> Option<TestS
     let config = Config {
         hosts: hosts.as_ptr(),
         n_hosts: hosts.len(),
-        port: 0,
+        port,
         api_prefix: Str::new(b""),
         api_keys: keys.as_ptr(),
         n_api_keys: keys.len(),
@@ -584,6 +590,70 @@ fn stale_unix_socket_is_replaced_but_a_live_one_is_kept() {
 
     assert!(launch_with(&[], true, options()).is_none());
     drop(server);
+}
+
+#[test]
+fn abstract_unix_socket_is_not_a_file() {
+    use std::os::linux::net::SocketAddrExt;
+    let name = format!("llama-http-test-{}.sock", std::process::id());
+    let host = format!("@{name}");
+    let server = launch_with(
+        &[],
+        true,
+        Options {
+            host: Some(&host),
+            ..Options::default()
+        },
+    )
+    .expect("abstract socket binds");
+    assert!(!std::path::Path::new(&host).exists());
+    let addr = std::os::unix::net::SocketAddr::from_abstract_name(&name).unwrap();
+    let mut stream = std::os::unix::net::UnixStream::connect_addr(&addr).unwrap();
+    stream
+        .write_all(b"GET /echo HTTP/1.1\r\nHost: t\r\nConnection: close\r\n\r\n")
+        .unwrap();
+    let mut buf = Vec::new();
+    stream.read_to_end(&mut buf).unwrap();
+    assert_eq!(parse_reply(&buf).status, 200);
+    drop(server);
+}
+
+#[test]
+fn out_of_range_port_fails_to_start() {
+    let options = Options {
+        port: 70000,
+        ..Options::default()
+    };
+    assert!(launch_with(&[], true, options).is_none());
+}
+
+#[test]
+fn path_is_decoded_once_before_routing_like_httplib() {
+    let server = start(&[], true);
+    let reply = get(server.port, "/ech%6F", "");
+    assert_eq!(reply.status, 200);
+    assert!(reply.body.contains("path=/echo\n"));
+
+    let raw =
+        "POST /slots/a%2Fb HTTP/1.1\r\nHost: t\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+    assert_eq!(send(server.port, raw).status, 404);
+}
+
+#[test]
+fn multipart_part_with_empty_filename_is_a_field() {
+    let server = start(&[], true);
+    let body =
+        "--b\r\nContent-Disposition: form-data; name=\"t\"; filename=\"\"\r\n\r\nhi\r\n--b--\r\n";
+    let reply = send(
+        server.port,
+        &format!(
+            "POST /slots/0 HTTP/1.1\r\nHost: t\r\nConnection: close\r\nContent-Type: multipart/form-data; boundary=b\r\nContent-Length: {}\r\n\r\n{body}",
+            body.len()
+        ),
+    );
+    assert_eq!(reply.status, 200);
+    assert!(reply.body.contains("field:t=hi\n"));
+    assert!(reply.body.contains("files=0\n"));
 }
 
 #[test]

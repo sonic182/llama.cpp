@@ -5,8 +5,6 @@ use std::{
 
 use bytes::Bytes;
 
-use crate::codec;
-
 pub struct StaticDir {
     root: PathBuf,
     canonical_root: PathBuf,
@@ -49,8 +47,7 @@ impl StaticDir {
         if_none_match: Option<&[u8]>,
     ) -> Option<Outcome> {
         let relative = request_path.strip_prefix(&self.mount)?;
-        let decoded = codec::decode(relative.as_bytes(), false);
-        let sub_path = format!("/{}", String::from_utf8_lossy(&decoded));
+        let sub_path = format!("/{relative}");
         if !is_valid_path(&sub_path) {
             return None;
         }
