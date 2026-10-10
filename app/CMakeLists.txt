@@ -10,7 +10,7 @@ target_link_libraries(${TARGET} PRIVATE
     llama-bench-impl
     llama-batched-bench-impl
     llama-fit-params-impl
-    llama-quantize-impl
+    llama-quantize-rs
     llama-perplexity-impl
 )
 target_compile_features(${TARGET} PRIVATE cxx_std_17)
