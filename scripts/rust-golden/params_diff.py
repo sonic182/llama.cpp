@@ -236,13 +236,13 @@ def build_cases(tables):
     add("server", ["--chat-template", "bogus-template", "--no-jinja"])
     add("server", ["--chat-template-kwargs", '{"preserve_reasoning": false}'])
     for batch in (["-Cb", "7"], ["-Crb", "0-3"], ["--cpu-strict-batch", "1"], ["--poll-batch", "1"], ["--prio-batch", "1"]):
-        add("server", ["-tb", "2", *batch])
+        add("server", ["-tb", "1023", *batch])
     for draft in (["--spec-draft-cpu-mask", "7"], ["--spec-draft-cpu-range", "0-3"], ["--spec-draft-cpu-strict", "1"],
                   ["--spec-draft-poll", "1"], ["--spec-draft-prio", "1"]):
-        add("server", ["-td", "2", *draft])
+        add("server", ["-td", "1023", *draft])
     for draft in (["--spec-draft-cpu-mask-batch", "7"], ["--spec-draft-cpu-range-batch", "0-3"],
                   ["--spec-draft-cpu-strict-batch", "1"], ["--spec-draft-poll-batch", "1"], ["--spec-draft-prio-batch", "1"]):
-        add("speculative", ["-m", MODEL, "-tbd", "2", *draft])
+        add("speculative", ["-m", MODEL, "-tbd", "1023", *draft])
     return cases
 
 
@@ -258,12 +258,14 @@ def flatten(value, path, out):
     return out
 
 
-def normalize(text):
+def normalize(text, host_threads):
     text = re.sub(r"^version: .*$", "version: $VERSION", text, flags=re.M)
-    return re.sub(r"^built with .*$", "built with $COMPILER", text, flags=re.M)
+    text = re.sub(r"^built with .*$", "built with $COMPILER", text, flags=re.M)
+    return re.sub(r"(requested thread count: )(\d+)",
+                  lambda m: m.group(1) + ("$HOST_THREADS" if int(m.group(2)) in host_threads else m.group(2)), text)
 
 
-def run_case(driver, case, default_threads):
+def run_case(driver, case, host_threads):
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         for name, text in FIXTURES.items():
@@ -294,27 +296,30 @@ def run_case(driver, case, default_threads):
             for k in sorted(set(a) | set(b)):
                 if a.get(k) != b.get(k):
                     v = b.get(k)
-                    if k.endswith("n_threads") and v == default_threads and a.get(k) == -1:
-                        v = "$DEFAULT_THREADS"
+                    if k.endswith("n_threads") and v in host_threads:
+                        v = "$HOST_THREADS"
                     changed[k] = v
             result["ok"] = data["ok"]
             result["params"] = changed
         after = {str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*")}
         result["new_files"] = sorted(after - before)
-        result["stdout"] = normalize(proc.stdout.replace(tmp, "$TMP"))
-        result["stderr"] = sorted(normalize(proc.stderr.replace(tmp, "$TMP")).splitlines())
+        result["stdout"] = normalize(proc.stdout.replace(tmp, "$TMP"), host_threads)
+        result["stderr"] = sorted(normalize(proc.stderr.replace(tmp, "$TMP"), host_threads).splitlines())
         return result
 
 
-def default_threads(driver):
-    with tempfile.TemporaryDirectory() as tmp:
-        subprocess.run([driver, "out.json", "server"], cwd=tmp, capture_output=True, check=True)
-        data = json.loads((Path(tmp) / "out.json").read_text())
-        return data["after"]["cpuparams"]["n_threads"]
+def host_threads(driver):
+    found = set()
+    for args in ([], ["-t", "-1"]):
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run([driver, "out.json", "server", *args], cwd=tmp, capture_output=True, check=True)
+            data = json.loads((Path(tmp) / "out.json").read_text())
+            found.add(data["after"]["cpuparams"]["n_threads"])
+    return found
 
 
 def run_all(driver, cases):
-    threads = default_threads(driver)
+    threads = host_threads(driver)
     with ThreadPoolExecutor(max_workers=4) as pool:
         return list(pool.map(lambda c: run_case(driver, c, threads), cases))
 
