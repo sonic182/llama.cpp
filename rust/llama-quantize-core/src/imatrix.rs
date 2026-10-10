@@ -9,6 +9,26 @@ pub struct Entry {
     pub counts: Vec<i64>,
 }
 
+impl Entry {
+    pub fn from_gguf(sums: Vec<f32>, counts: &[f32]) -> Option<Entry> {
+        if counts.is_empty() {
+            return None;
+        }
+        Some(Entry {
+            sums,
+            counts: counts.iter().map(|&c| lround(c)).collect(),
+        })
+    }
+}
+
+fn lround(c: f32) -> i64 {
+    if c.is_finite() && c.abs() < 9_223_372_036_854_775_808.0 {
+        c.round() as i64
+    } else {
+        i64::MIN
+    }
+}
+
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Imatrix {
     pub entries: BTreeMap<Vec<u8>, Entry>,
@@ -253,6 +273,13 @@ mod tests {
             parse_legacy(&huge, b"in.dat").unwrap_err(),
             b"common_imatrix_load_legacy: failed reading name for entry 1 from in.dat\n"
         );
+    }
+
+    #[test]
+    fn gguf_entry_rejects_empty_counts_and_rounds_like_lround() {
+        assert_eq!(Entry::from_gguf(vec![1.0], &[]), None);
+        let e = Entry::from_gguf(vec![], &[2.5, -2.5, f32::INFINITY, f32::NAN, 1e19]).unwrap();
+        assert_eq!(e.counts, vec![3, -3, i64::MIN, i64::MIN, i64::MIN]);
     }
 
     #[test]

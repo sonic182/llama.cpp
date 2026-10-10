@@ -98,13 +98,11 @@ pub fn load(fname: &[u8], log: &mut dyn FnMut(&[u8])) -> Option<Imatrix> {
             ));
             return None;
         };
-        imatrix.entries.insert(
-            name,
-            Entry {
-                sums,
-                counts: counts.into_iter().map(|c| c.round() as i64).collect(),
-            },
-        );
+        let Some(entry) = Entry::from_gguf(sums, &counts) else {
+            log(&line(&format!("{FUNC}: empty counts for "), &name, "\n"));
+            return None;
+        };
+        imatrix.entries.insert(name, entry);
     }
 
     Some(imatrix)
