@@ -145,6 +145,7 @@ fn read_etag(path: &Path) -> String {
             let line = data.split(|&b| b == b'\n').next().unwrap_or_default();
             String::from_utf8_lossy(line).into_owned()
         }
+        Err(error) if error.kind() == io::ErrorKind::NotFound => String::new(),
         Err(_) => {
             log::emit(
                 Level::Error,

@@ -1,10 +1,13 @@
+use std::ffi::{CStr, c_char, c_int};
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::sync::Mutex;
 use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use llama_download::log;
 use llama_download::remote::{self, ContentParams, Options};
 
 const URL: &str =
@@ -147,6 +150,44 @@ fn silent_server_fails_after_the_requested_timeout() {
     assert!(
         elapsed >= Duration::from_secs(1) && elapsed < Duration::from_secs(10),
         "{elapsed:?}"
+    );
+}
+
+static ERRORS: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+extern "C" fn capture_errors(level: c_int, message: *const c_char) {
+    if level == log::Level::Error as c_int {
+        let message = unsafe { CStr::from_ptr(message) };
+        ERRORS
+            .lock()
+            .unwrap()
+            .push(message.to_string_lossy().into_owned());
+    }
+}
+
+#[test]
+fn cached_file_without_etag_is_refreshed_silently() {
+    log::set_sink(capture_errors);
+    let (base, _requests) = serve(hello);
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("model.gguf");
+    fs::write(&path, "stale").unwrap();
+    assert_eq!(
+        remote::download_file(
+            &format!("{base}/model.gguf"),
+            &path,
+            &Options::default(),
+            false
+        ),
+        Ok(200)
+    );
+    assert_eq!(fs::read_to_string(&path).unwrap(), "hello");
+    assert!(
+        !ERRORS
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|e| e.contains("read_etag"))
     );
 }
 
