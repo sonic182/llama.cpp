@@ -49,6 +49,8 @@ pub enum Node {
     },
 }
 
+const MAX_BUILD_DEPTH: usize = 512;
+
 pub struct Document {
     pub root: Node,
     pub refs: BTreeMap<String, Node>,
@@ -58,6 +60,7 @@ pub fn parse(schema: &Value) -> Result<Document, String> {
     let mut builder = Builder {
         root: schema,
         refs: BTreeMap::new(),
+        depth: 0,
     };
     let root = builder.build_node(schema, "#")?;
     let refs = builder
@@ -179,6 +182,7 @@ fn resolve_ref<'v>(root: &'v Value, reference: &str, path: &str) -> Result<&'v V
 struct Builder<'a> {
     root: &'a Value,
     refs: BTreeMap<String, Option<Node>>,
+    depth: usize,
 }
 
 impl<'a> Builder<'a> {
@@ -319,6 +323,16 @@ impl<'a> Builder<'a> {
     }
 
     fn build_node(&mut self, schema: &Value, path: &str) -> Result<Node, String> {
+        if self.depth >= MAX_BUILD_DEPTH {
+            return Err("schema nesting too deep".to_string());
+        }
+        self.depth += 1;
+        let result = self.build_node_inner(schema, path);
+        self.depth -= 1;
+        result
+    }
+
+    fn build_node_inner(&mut self, schema: &Value, path: &str) -> Result<Node, String> {
         let Some(obj) = schema.as_object() else {
             return fail(path, "schema must be an object");
         };

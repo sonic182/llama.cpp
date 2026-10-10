@@ -91,6 +91,26 @@ fn deep_but_finite_schemas_still_convert() {
 }
 
 #[test]
+fn a_long_ref_chain_is_an_error_instead_of_a_stack_overflow() {
+    let n = 100_000;
+    let defs: Vec<String> = (0..n)
+        .map(|i| format!(r##""a{i}": {{"$ref": "#/$defs/a{}"}}"##, i + 1))
+        .chain([format!(r#""a{n}": {{"type": "string"}}"#)])
+        .collect();
+    let schema = format!(
+        r##"{{"$ref": "#/$defs/a0", "$defs": {{{}}}}}"##,
+        defs.join(",")
+    );
+    let result = std::thread::Builder::new()
+        .stack_size(2 << 20)
+        .spawn(move || json_schema_to_grammar(&schema).err())
+        .unwrap()
+        .join()
+        .unwrap();
+    assert!(result.unwrap().ends_with("schema nesting too deep"));
+}
+
+#[test]
 fn self_referencing_refs_inside_all_of_terminate() {
     let schema = r##"{"allOf": [{"$ref": "#/$defs/d"}], "$defs": {"d": {"$ref": "#/$defs/d"}}}"##;
     let error = json_schema_to_grammar(schema).err().unwrap();
