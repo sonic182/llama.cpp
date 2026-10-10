@@ -1,6 +1,7 @@
 //! Command line arguments and the Params they fill, ported from common/arg.cpp.
 
 pub mod ffi;
+pub mod models;
 pub mod params;
 
 pub use params::Params;

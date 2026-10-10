@@ -299,6 +299,7 @@ llama_build_and_test(test-thread-safety.cpp ARGS -m "${MODEL_DEST}" -ngl 99 -p "
 set_tests_properties(test-thread-safety PROPERTIES FIXTURES_REQUIRED test-download-model)
 
 llama_build_and_test(test-arg-parser.cpp)
+target_link_libraries(test-arg-parser PRIVATE llama-download-rs)
 
 llama_build(${PROJECT_SOURCE_DIR}/scripts/rust-golden/params_driver.cpp)
 target_include_directories(params_driver PRIVATE ${PROJECT_SOURCE_DIR}/rust/llama-args/include)
@@ -309,6 +310,7 @@ if (Python3_Interpreter_FOUND)
     set_tests_properties(test-params-golden PROPERTIES LABELS main)
 endif()
 llama_build_and_test(test-model-resolution.cpp)
+target_link_libraries(test-model-resolution PRIVATE llama-download-rs)
 # the test serves its repos from an httplib server, and the library links it privately
 target_link_libraries(test-model-resolution PRIVATE cpp-httplib)
 
@@ -387,6 +389,7 @@ if (NOT LLAMA_USE_SYSTEM_GGML)
 endif()
 
 llama_build(test-export-graph-ops.cpp)
+target_link_libraries(test-export-graph-ops PRIVATE llama-download-rs)
 if (TARGET gguf-model-data)
     target_link_libraries(test-export-graph-ops PRIVATE gguf-model-data)
     target_compile_definitions(test-export-graph-ops PRIVATE LLAMA_HF_FETCH)

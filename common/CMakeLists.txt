@@ -74,13 +74,9 @@ add_library(${TARGET}
     console.h
     debug.cpp
     debug.h
-    download.cpp
     download.h
-    download-rust.h
     fit.cpp
     fit.h
-    hf-cache.cpp
-    hf-cache.h
     http.h
     json-schema-to-grammar.cpp
     json-schema.cpp

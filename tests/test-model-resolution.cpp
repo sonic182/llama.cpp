@@ -5,17 +5,20 @@
 
 #include "arg.h"
 #include "common.h"
-#include "download.h"
 #include "http.h"
 #include "log.h"
 
 #include "json.h"
+
+#include "llama_download.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <map>
+#include <mutex>
+#include <set>
 #include <thread>
 #include <string>
 #include <vector>
@@ -50,9 +53,26 @@ static std::map<std::string, std::vector<std::string>> g_repos;
 
 static const char * COMMIT = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
+// plain files served under /files/, with the GET count of each one
+static std::set<std::string> g_files;
+static std::map<std::string, int> g_file_gets;
+static std::mutex g_files_mutex;
+static std::string g_endpoint;
+
 // the server lives in main, so its destructor runs before the static teardown
 // tears down the winsock state httplib brings in
 static void serve_repos(httplib::Server & server) {
+    server.Get(R"(/files/(.+))", [](const httplib::Request & req, httplib::Response & res) {
+        std::lock_guard<std::mutex> lock(g_files_mutex);
+        if (!g_files.count(req.matches[1])) {
+            res.status = 404;
+            return;
+        }
+        if (req.method == "GET") {
+            g_file_gets[req.matches[1]]++;
+        }
+        res.set_content("gguf", "application/octet-stream");
+    });
     server.Get(R"(/api/models/(.+)/refs)", [](const httplib::Request & req, httplib::Response & res) {
         if (g_repos.count(req.matches[1])) {
             res.set_content(common_json{{"branches", common_json::array({ common_json{{"name", "main"}, {"targetCommit", COMMIT}} })}}.dump(),
@@ -75,13 +95,6 @@ static void serve_repos(httplib::Server & server) {
         }
         res.set_content(files.dump(), "application/json");
     });
-}
-
-static common_params_model model_ref(const std::string & hf_repo, const std::string & hf_file = "") {
-    common_params_model m;
-    m.hf_repo = hf_repo;
-    m.hf_file = hf_file;
-    return m;
 }
 
 // the model cache is isolated under a temporary directory named after the
@@ -285,34 +298,38 @@ static const plan_case plan_cases[] = {
      "", "", "", "", "dspark-model-BF16.gguf"},
 };
 
+static std::string plan_path(const common_json & plan, const char * key) {
+    const auto & file = plan.at(key);
+    return file.is_null() ? std::string() : file.at("path").get<std::string>();
+}
+
 static void check_plan(const plan_case & c) {
-    common_download_opts opts;
-    opts.download_mmproj = c.sidecars;
-    opts.download_mtp    = c.sidecars;
-    opts.download_dflash = c.sidecars;
-    opts.download_eagle3 = c.sidecars;
-    opts.download_dspark = c.sidecars;
+    const uint32_t flags = c.sidecars ? (1u | 2u | 4u | 8u | 16u) : 0u;
 
-    auto plan = common_download_get_hf_plan(model_ref(c.hf_repo, c.hf_file), opts);
+    char * raw = llama_dl_hf_plan(c.hf_repo, c.hf_file, "", flags);
+    const common_json envelope = common_json::parse(raw);
+    llama_dl_free_string(raw);
+    REQUIRE(envelope.at("ok").get<bool>());
+    const common_json & plan = envelope.at("value");
 
-    REQUIRE_EQ(plan.primary.path, c.primary);
-    REQUIRE_EQ(plan.mmproj.path,  c.mmproj);
-    REQUIRE_EQ(plan.mtp.path,     c.mtp);
-    REQUIRE_EQ(plan.dflash.path,  c.dflash);
-    REQUIRE_EQ(plan.eagle3.path,  c.eagle3);
-    REQUIRE_EQ(plan.dspark.path,  c.dspark);
+    REQUIRE_EQ(plan_path(plan, "primary"), c.primary);
+    REQUIRE_EQ(plan_path(plan, "mmproj"),  c.mmproj);
+    REQUIRE_EQ(plan_path(plan, "mtp"),     c.mtp);
+    REQUIRE_EQ(plan_path(plan, "dflash"),  c.dflash);
+    REQUIRE_EQ(plan_path(plan, "eagle3"),  c.eagle3);
+    REQUIRE_EQ(plan_path(plan, "dspark"),  c.dspark);
 
     // exact shard set, order insensitive; the primary must be the first split
     std::vector<std::string> actual;
-    for (const auto & f : plan.model_files) {
-        actual.push_back(f.path);
+    for (const auto & f : plan.at("model_files")) {
+        actual.push_back(f.at("path").get<std::string>());
     }
     std::sort(actual.begin(), actual.end());
     auto expected = c.model_files;
     std::sort(expected.begin(), expected.end());
     REQUIRE(actual == expected);
     if (!expected.empty()) {
-        REQUIRE(plan.primary.path == expected.front());
+        REQUIRE(plan_path(plan, "primary") == expected.front());
     }
 }
 
@@ -468,6 +485,62 @@ static void test_task_assembly() {
     g_repos.clear();
 }
 
+//
+// url downloads: real transfers over the loopback through the Rust handler
+//
+
+static void test_url_downloads() {
+    printf("test-model-resolution: url downloads\n");
+
+    const auto dir = cache_dir / "url";
+    std::filesystem::create_directories(dir);
+    const std::string files = g_endpoint + "files/";
+    g_files = {"split-00001-of-00002.gguf", "split-00002-of-00002.gguf", "single.gguf"};
+
+    auto apply = [](std::vector<std::string> argv, common_params & params) {
+        std::vector<char *> cargv;
+        g_context.clear();
+        for (auto & a : argv) {
+            g_context += g_context.empty() ? a : " " + a;
+            cargv.push_back(a.data());
+        }
+        REQUIRE(common_params_parse((int) cargv.size(), cargv.data(), params, LLAMA_EXAMPLE_SERVER));
+        auto handler = common_models_handler_init(params, LLAMA_EXAMPLE_SERVER);
+        common_models_handler_apply(handler, params);
+    };
+
+    {
+        // a split url puts every part next to -m and loads the first one
+        common_params params;
+        apply({"server", "-mu", files + "split-00001-of-00002.gguf", "-m", (dir / "model.gguf").string()}, params);
+        REQUIRE_EQ(params.model.path, (dir / "split-00001-of-00002.gguf").string());
+        REQUIRE(std::filesystem::exists(dir / "split-00001-of-00002.gguf"));
+        REQUIRE(std::filesystem::exists(dir / "split-00002-of-00002.gguf"));
+    }
+    {
+        // a failed transfer reports the url and the status
+        common_params params;
+        std::string error;
+        try {
+            apply({"server", "-mu", files + "missing.gguf", "-m", (dir / "missing.gguf").string()}, params);
+        } catch (const std::runtime_error & e) {
+            error = e.what();
+        }
+        REQUIRE_EQ(error, "Download '" + files + "missing.gguf' failed with status code: 404");
+    }
+    {
+        // the same local path is downloaded once, and every task still wires its params
+        common_params params;
+        const std::string local = (dir / "single.gguf").string();
+        apply({"server", "-mu", files + "single.gguf", "-m", local, "-mmu", files + "single.gguf", "-mm", local}, params);
+        REQUIRE_EQ(params.model.path, local);
+        REQUIRE_EQ(params.mmproj.path, local);
+        REQUIRE(g_file_gets["single.gguf"] == 1);
+    }
+
+    g_files.clear();
+}
+
 int main(void) {
     // unbuffered, so a crash cannot swallow the reports already printed
     setvbuf(stdout, nullptr, _IONBF, 0);
@@ -492,10 +565,12 @@ int main(void) {
 
     std::thread server_thread([&server] { server.listen_after_bind(); });
     server.wait_until_ready();
-    common_set_env("MODEL_ENDPOINT", "http://127.0.0.1:" + std::to_string(port) + "/");
+    g_endpoint = "http://127.0.0.1:" + std::to_string(port) + "/";
+    common_set_env("MODEL_ENDPOINT", g_endpoint);
 
     test_plan_resolution();
     test_task_assembly();
+    test_url_downloads();
 
     server.stop();
     server_thread.join();

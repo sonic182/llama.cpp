@@ -47,3 +47,7 @@ add_dependencies(llama-http llama-rs)
 add_library(llama-quantize-rs INTERFACE)
 target_include_directories(llama-quantize-rs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/llama-quantize/include)
 add_dependencies(llama-quantize-rs llama-rs)
+
+add_library(llama-download-rs INTERFACE)
+target_include_directories(llama-download-rs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/llama-download/include)
+add_dependencies(llama-download-rs llama-rs)

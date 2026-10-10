@@ -7,11 +7,11 @@
 #include "build-info.h"
 #include "preset.h"
 #include "download.h"
-#include "hf-cache.h"
 #include "http.h"
 #include "subproc.h"
 
 #include <cpp-httplib/httplib.h> // TODO: remove this once we use HTTP client from download.h
+#include "llama_download.h"
 #include <optional>
 
 #include <functional>
@@ -44,6 +44,36 @@ extern char **environ;
 
 #define CMD_ROUTER_TO_CHILD_EXIT  "cmd_router_to_child:exit"
 #define CMD_CHILD_TO_ROUTER_STATE "cmd_child_to_router:state:" // followed by json string
+
+static std::string take_download_result(char * text, char * error) {
+    if (error) {
+        const std::string message = error;
+        llama_dl_free_string(error);
+        throw std::runtime_error(message);
+    }
+    const std::string result = text ? text : "";
+    llama_dl_free_string(text);
+    return result;
+}
+
+static std::string cached_model_path(const std::string & hf_repo_with_tag, const std::string & hf_file = "") {
+    char * error = nullptr;
+    char * path = llama_dl_resolve_path(hf_repo_with_tag.c_str(), hf_file.c_str(), &error);
+    return take_download_result(path, error);
+}
+
+static bool remove_cached_model(const std::string & hf_repo_with_tag) {
+    char * error = nullptr;
+    const int32_t removed = llama_dl_remove(hf_repo_with_tag.c_str(), &error);
+    take_download_result(nullptr, error);
+    return removed > 0;
+}
+
+static std::string hf_cache_path() {
+    char * error = nullptr;
+    char * path = llama_dl_hf_cache_path(&error);
+    return take_download_result(path, error);
+}
 
 // note: SIGPIPE is ignored by the server
 static void request_child_exit(server_subproc & proc) {
@@ -664,7 +694,7 @@ void server_models::load_models() {
     // Phase 1: load presets from all sources - pure I/O, no lock needed
     // 1. cached models
     common_presets cached_models = ctx_preset.load_from_cache();
-    SRV_TRC("Loaded %zu cached model presets from %s\n", cached_models.size(), hf_cache::get_cache_path().c_str());
+    SRV_TRC("Loaded %zu cached model presets from %s\n", cached_models.size(), hf_cache_path().c_str());
     // 2. local models from --models-dir
     common_presets local_models;
     if (!base_params.models_dir.empty()) {
@@ -725,7 +755,7 @@ void server_models::load_models() {
             }
             std::string hf_file;
             preset.get_option(file_key, hf_file);
-            std::string path = common_download_resolve_path(hf_repo, hf_file);
+            std::string path = cached_model_path(hf_repo, hf_file);
             if (!path.empty()) {
                 preset_paths.insert(path);
             }
@@ -743,7 +773,7 @@ void server_models::load_models() {
                 if (get_source(name) != SERVER_MODEL_SOURCE_CACHE) {
                     continue; // merged with another source, not a pure cache entry
                 }
-                std::string path = common_download_resolve_path(name);
+                std::string path = cached_model_path(name);
                 if (!path.empty() && preset_paths.count(path)) {
                     SRV_INF("hiding cache model name=%s (deduplicated by a preset)\n", name.c_str());
                     hidden_models.insert(name);
@@ -1392,14 +1422,14 @@ bool server_models::remove(const std::string & name) {
     if (it == mapping.end()) {
         // load_models() already erased the entry; we just need to clean up the cached files on disk
         lk.unlock();
-        bool ok = common_download_remove(name);
+        bool ok = remove_cached_model(name);
         SRV_INF("removing model name=%s from cache (%s)\n", name.c_str(), ok ? "succeeded" : "partial");
         notify_sse("model_remove", name, {});
         return true;
     }
 
     // remove from disk (best-effort: cancelled downloads may have no cached files)
-    bool ok = common_download_remove(name);
+    bool ok = remove_cached_model(name);
     mapping.erase(name);
     if (!ok) {
         SRV_WRN("removing model name=%s from disk returned false (no cached files?)\n", name.c_str());

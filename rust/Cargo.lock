@@ -795,6 +795,7 @@ name = "llama-args"
 version = "0.1.0"
 dependencies = [
  "ciborium",
+ "llama-download",
  "serde",
  "serde_bytes",
 ]

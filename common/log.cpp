@@ -2,6 +2,7 @@
 #include "log.h"
 #include "json.h"
 
+#include "llama_download.h"
 #include "llama_sampling.h"
 
 #include <chrono>
@@ -477,8 +478,18 @@ static void common_sampling_log(int level, const char * func, const char * messa
     }
 }
 
+static void common_download_log(int level, const char * message) {
+    switch (level) {
+        case 0:  LOG_DBG("%s\n", message); break;
+        case 1:  LOG_INF("%s\n", message); break;
+        case 2:  LOG_WRN("%s\n", message); break;
+        default: LOG_ERR("%s\n", message); break;
+    }
+}
+
 static const struct common_rust_log_installer {
     common_rust_log_installer() {
+        llama_dl_set_log_sink(common_download_log);
         llama_rs_sampling_set_log_sink(common_sampling_log);
     }
 } common_rust_log_installer_instance;

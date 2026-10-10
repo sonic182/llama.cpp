@@ -137,10 +137,14 @@ bool common_params_to_map(int argc, char ** argv, llama_example ex, std::map<com
 // see: https://github.com/ggml-org/llama.cpp/issues/18163
 void common_params_add_preset_options(std::vector<common_arg> & args);
 
+struct llama_args_models_handler;
+
+struct common_models_handler_deleter {
+    void operator()(llama_args_models_handler * handler) const;
+};
+
 struct common_models_handler {
-    common_download_hf_plan plan;
-    common_download_hf_plan plan_spec;
-    common_download_opts opts;
+    std::unique_ptr<llama_args_models_handler, common_models_handler_deleter> impl;
 };
 
 // initialize downloading opts and hf_plan if needed, but does not download anything yet
