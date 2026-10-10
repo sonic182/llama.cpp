@@ -20,6 +20,15 @@ fn vocab_only_model_tokenizes_and_links_shim() {
         b"Hello world"
     );
 
+    assert!(matches!(
+        vocab.token_to_piece(-1, true),
+        Err(llama::Error::InvalidToken)
+    ));
+    assert!(matches!(
+        vocab.detokenize(&[9906, 128256], false, false),
+        Err(llama::Error::InvalidToken)
+    ));
+
     assert_eq!(
         unsafe { llama::sys::llama_ext_c_model_n_expert(model.as_ptr()) },
         0

@@ -15,6 +15,7 @@ pub enum Error {
     ModelLoad,
     GgufLoad,
     TextTooLong,
+    InvalidToken,
     Tokenize,
     Detokenize,
 }
@@ -26,6 +27,7 @@ impl fmt::Display for Error {
             Error::ModelLoad => "failed to load model",
             Error::GgufLoad => "failed to load GGUF file",
             Error::TextTooLong => "text is too long",
+            Error::InvalidToken => "token id is out of range",
             Error::Tokenize => "tokenization failed",
             Error::Detokenize => "detokenization failed",
         };
@@ -101,7 +103,20 @@ impl Vocab<'_> {
         unsafe { sys::llama_vocab_get_add_bos(self.ptr.as_ptr()) }
     }
 
+    fn check_tokens(&self, tokens: &[sys::llama_token]) -> Result<(), Error> {
+        let n = self.n_tokens();
+        if tokens
+            .iter()
+            .all(|&t| usize::try_from(t).is_ok_and(|t| t < n))
+        {
+            Ok(())
+        } else {
+            Err(Error::InvalidToken)
+        }
+    }
+
     pub fn token_to_piece(&self, token: sys::llama_token, special: bool) -> Result<Vec<u8>, Error> {
+        self.check_tokens(&[token])?;
         let mut piece: Vec<u8> = Vec::with_capacity(32);
         let mut n = unsafe {
             sys::llama_token_to_piece(
@@ -177,6 +192,7 @@ impl Vocab<'_> {
         remove_special: bool,
         unparse_special: bool,
     ) -> Result<Vec<u8>, Error> {
+        self.check_tokens(tokens)?;
         let n_tokens = i32::try_from(tokens.len()).map_err(|_| Error::TextTooLong)?;
         let needed = unsafe {
             sys::llama_detokenize(
