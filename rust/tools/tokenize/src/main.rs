@@ -16,18 +16,24 @@ use llama::{Backend, Model};
 use escape::process_escapes;
 
 #[derive(Parser)]
-#[command(name = "llama-tokenize")]
+#[command(name = "llama-tokenize", args_override_self = true)]
 struct Cli {
     /// model path to load
-    #[arg(short, long, value_name = "FNAME", env = "LLAMA_ARG_MODEL")]
+    #[arg(
+        short,
+        long,
+        value_name = "FNAME",
+        env = "LLAMA_ARG_MODEL",
+        allow_hyphen_values = true
+    )]
     model: Option<PathBuf>,
 
     /// prompt to tokenize
-    #[arg(short, long, value_name = "PROMPT")]
+    #[arg(short, long, value_name = "PROMPT", allow_hyphen_values = true)]
     prompt: Option<OsString>,
 
     /// a file containing the prompt (default: none)
-    #[arg(short, long, value_name = "FNAME")]
+    #[arg(short, long, value_name = "FNAME", allow_hyphen_values = true)]
     file: Option<PathBuf>,
 
     /// whether to process escapes sequences (\n, \r, \t, \', \", \\) (default: true)

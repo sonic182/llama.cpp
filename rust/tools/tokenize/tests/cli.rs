@@ -44,3 +44,10 @@ fn stdin_and_prompt_agree_and_escapes_apply() {
     assert_ne!(from_prompt, unescaped);
     assert!(from_prompt.contains("'\n'"));
 }
+
+#[test]
+fn repeated_options_keep_the_last_value_and_accept_leading_hyphens() {
+    let out = tokenize(&["--ids", "-p", "x", "--ids", "-p", "-1"], None);
+    assert_eq!(out, tokenize(&["--ids", "-p=-1"], None));
+    assert_ne!(out, tokenize(&["--ids", "-p", "x"], None));
+}
