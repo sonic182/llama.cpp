@@ -322,7 +322,8 @@ def run_all(driver, cases):
 def record(driver, out):
     cases = build_cases(example_tables(driver))
     results = run_all(driver, cases)
-    Path(out).write_text(json.dumps([{"case": c, "result": r} for c, r in zip(cases, results)], indent=1) + "\n")
+    lines = ",\n".join(json.dumps({"case": c, "result": r}) for c, r in zip(cases, results))
+    Path(out).write_text(f"[\n{lines}\n]\n")
     ok = sum(1 for r in results if r.get("ok"))
     print(f"{len(cases)} cases recorded, {ok} parsed successfully")
 
