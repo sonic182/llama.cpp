@@ -1,7 +1,7 @@
 use std::fs::{self, File};
-use std::io::{Seek, SeekFrom, Write};
+use std::io::{self, Seek, SeekFrom, Write};
 
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use llama::gguf::{GgufBuilder, GgufFile, split_path, split_prefix};
 
 use crate::args::Params;
@@ -78,8 +78,9 @@ pub fn merge(params: &Params) -> Result<bool> {
     let mut fout = if params.dry_run {
         None
     } else {
-        let mut fout = File::create(path_of(&params.output))?;
-        write_zeros(&mut fout, out.meta_size())?;
+        let fout = File::create(path_of(&params.output))
+            .and_then(|mut fout| write_zeros(&mut fout, out.meta_size()).map(|()| fout))
+            .with_context(|| output_error(params))?;
         Some(fout)
     };
 
@@ -95,12 +96,13 @@ pub fn merge(params: &Params) -> Result<bool> {
         eprint!("gguf_merge: writing tensors {} ...", shown(&path));
 
         if let Some(fout) = fout.as_mut() {
-            for t in 0..file.n_tensors() {
-                let n_bytes = file.tensor_nbytes(t);
-                let offset = file.data_offset() + file.tensor_offset(t);
-                copy_range(&mut f_input, fout, offset, n_bytes)?;
-                write_zeros(fout, pad(n_bytes) - n_bytes)?;
-            }
+            copy_tensors(&file, &mut f_input, fout).with_context(|| {
+                format!(
+                    "gguf_merge: failed to copy tensors from {} to {}",
+                    shown(&path),
+                    shown(&params.output)
+                )
+            })?;
         }
         drop(file);
         drop(f_input);
@@ -118,8 +120,10 @@ pub fn merge(params: &Params) -> Result<bool> {
     }
 
     if let Some(mut fout) = fout {
-        fout.seek(SeekFrom::Start(0))?;
-        fout.write_all(&out.meta_data())?;
+        fout.seek(SeekFrom::Start(0))
+            .and_then(|_| fout.write_all(&out.meta_data()))
+            .and_then(|()| fout.sync_all())
+            .with_context(|| output_error(params))?;
     }
 
     eprintln!(
@@ -129,4 +133,18 @@ pub fn merge(params: &Params) -> Result<bool> {
         total_tensors
     );
     Ok(merge_error)
+}
+
+fn output_error(params: &Params) -> String {
+    format!("gguf_merge: failed to write {}", shown(&params.output))
+}
+
+fn copy_tensors(file: &GgufFile, input: &mut File, output: &mut File) -> io::Result<()> {
+    for t in 0..file.n_tensors() {
+        let n_bytes = file.tensor_nbytes(t);
+        let offset = file.data_offset() + file.tensor_offset(t);
+        copy_range(input, output, offset, n_bytes)?;
+        write_zeros(output, pad(n_bytes) - n_bytes)?;
+    }
+    Ok(())
 }

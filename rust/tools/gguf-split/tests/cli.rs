@@ -105,3 +105,31 @@ fn dry_run_writes_nothing_and_refuses_both_limits() {
 
     fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn write_errors_name_the_file() {
+    let dir = scratch("errors");
+    let input = dir.join("in.gguf");
+    fs::write(&input, synthetic_gguf()).unwrap();
+    let missing = dir.join("missing");
+
+    let out = run(&[&input, &missing.join("out")]);
+    assert!(!out.status.success());
+    let split_out = dir.join("missing/out-00001-of-00001.gguf");
+    assert!(
+        String::from_utf8_lossy(&out.stderr)
+            .contains(&format!("failed to write {}", split_out.display()))
+    );
+
+    let first = dir.join("out-00001-of-00001.gguf");
+    assert!(run(&[&input, &dir.join("out")]).status.success());
+    let merged = missing.join("merged.gguf");
+    let out = run(&[Path::new("--merge"), &first, &merged]);
+    assert!(!out.status.success());
+    assert!(
+        String::from_utf8_lossy(&out.stderr)
+            .contains(&format!("failed to write {}", merged.display()))
+    );
+
+    fs::remove_dir_all(dir).unwrap();
+}

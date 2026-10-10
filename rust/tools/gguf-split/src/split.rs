@@ -1,8 +1,8 @@
 use std::ffi::CStr;
 use std::fs::File;
-use std::io::Write;
+use std::io::{self, Write};
 
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Context, Result, anyhow, bail};
 use llama::gguf::{GgufBuilder, GgufFile, split_path};
 
 use crate::args::{Mode, Params};
@@ -123,17 +123,23 @@ impl<'a> Strategy<'a> {
             print!("Writing file {} ... ", shown(&path));
             std::io::stdout().flush()?;
 
-            let mut out = File::create(path_of(&path))?;
-            out.write_all(&split.out.meta_data())?;
-            for &t in &split.tensors {
-                let n_bytes = self.input.tensor_nbytes(t);
-                let offset = self.input.data_offset() + self.input.tensor_offset(t);
-                copy_range(input_file, &mut out, offset, n_bytes)?;
-                write_zeros(&mut out, pad(n_bytes) - n_bytes)?;
-            }
+            self.write_split(split, input_file, &path)
+                .with_context(|| format!("gguf_split: failed to write {}", shown(&path)))?;
             println!("done");
         }
         Ok(())
+    }
+
+    fn write_split(&self, split: &Split, input_file: &mut File, path: &[u8]) -> io::Result<()> {
+        let mut out = File::create(path_of(path))?;
+        out.write_all(&split.out.meta_data())?;
+        for &t in &split.tensors {
+            let n_bytes = self.input.tensor_nbytes(t);
+            let offset = self.input.data_offset() + self.input.tensor_offset(t);
+            copy_range(input_file, &mut out, offset, n_bytes)?;
+            write_zeros(&mut out, pad(n_bytes) - n_bytes)?;
+        }
+        out.sync_all()
     }
 }
 
