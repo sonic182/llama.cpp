@@ -22,10 +22,11 @@ imatrix rules) vs `llama-quantize` (GGUF, libllama, C ABI). Pure helpers in
 
 1. **Planner / executor split.** When logic decides *what* to do and then does I/O, write
    a pure function that returns the decision (a list of tasks, the params to change),
-   plus an executor that performs it. Unit-test the planner with plain data. Example to
-   follow: in `llama-args/src/models.rs`, the rules (sidecar inference, draft priority,
-   dedup by `local_path`) belong in a planner; the downloads, `finalize` and directory
-   creation belong in the executor.
+   plus an executor that performs it. Unit-test the planner with plain data. Example:
+   `llama-args/src/models.rs`, where `plan_tasks` works on a small `Sources` struct
+   (not the whole `Params`) with the cache path and the GGUF hook injected, `finish`
+   takes `finalize` as a function, and `apply` only orders Docker, plan, downloads
+   and finish.
 2. **Ports are traits only at a real seam.** Add a trait (for example a Hugging Face
    catalog or a model cache) when a test would otherwise need a loopback server or a
    real cache, or when a second implementation exists. Otherwise pass a function or keep
