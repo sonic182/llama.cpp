@@ -146,6 +146,7 @@ endif()
 
 if (LLAMA_LLGUIDANCE)
     llama_build_and_test(test-grammar-llguidance.cpp ARGS ${PROJECT_SOURCE_DIR}/models/ggml-vocab-llama-bpe.gguf)
+    target_include_directories(test-grammar-llguidance PRIVATE ${PROJECT_SOURCE_DIR}/rust/llama-sampling/include)
 endif ()
 
 llama_build(test-recurrent-state-rollback.cpp)

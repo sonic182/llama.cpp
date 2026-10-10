@@ -87,7 +87,6 @@ add_library(${TARGET}
     json-schema.h
     json.cpp
     json.h
-    llguidance.cpp
     log.cpp
     log.h
     ngram-cache.cpp
