@@ -1,11 +1,14 @@
 ---
 name: llamacpp-dev
 description: >
-  Develop, analyze, benchmark, and optimize llama.cpp for CPU inference.
+  Develop, analyze, benchmark, and optimize llama.cpp for CPU inference, and
+  organize the C/C++ to Rust migration under rust/.
   Use this skill when working on CPU inference performance, GGML/GGUF kernels,
   quantization, threading, scheduling, memory usage, cache locality, inference
   latency, throughput, prompt processing, token generation, or server-side
-  overhead related to llama.cpp.
+  overhead related to llama.cpp; or when porting C/C++ code to Rust, adding or
+  changing a crate under rust/, its C ABI (ffi.rs, include/*.h), or removing a
+  C++ forwarder in favor of the Rust API.
 ---
 
 # llama.cpp CPU Inference Development
@@ -13,6 +16,15 @@ description: >
 Optimize llama.cpp for fast and memory-efficient CPU inference while preserving acceptable model quality.
 
 The primary goal is not to make individual functions faster in isolation. The goal is to improve real end-to-end inference.
+
+## Rust migration code organization
+
+When the task ports C/C++ to Rust, adds or changes code under `rust/`, changes a Rust
+C ABI, or removes a C++ forwarder, read
+[references/rust-organization.md](references/rust-organization.md) before designing the
+change. It defines the layering (pure logic, orchestration, adapters, `ffi.rs`), when a
+trait is justified, the FFI error convention, and what not to restructure. The
+performance rules below still apply to hot paths in Rust code.
 
 ## Golden Rules
 

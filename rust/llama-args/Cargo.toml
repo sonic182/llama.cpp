@@ -1,0 +1,12 @@
+[package]
+name = "llama-args"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+llama-download = { path = "../llama-download" }
+ciborium = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_bytes = "0.11"

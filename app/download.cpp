@@ -1,6 +1,5 @@
 #include "arg.h"
 #include "common.h"
-#include "download.h"
 #include "log.h"
 
 #include <cstdio>

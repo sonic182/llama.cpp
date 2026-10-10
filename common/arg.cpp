@@ -11,6 +11,10 @@
 #include "sampling.h"
 #include "speculative.h"
 #include "preset.h"
+#include "params-serde.h"
+
+#include "llama_args.h"
+#include "llama_download.h"
 
 // fix problem with std::min and std::max
 #if defined(_WIN32)
@@ -348,365 +352,94 @@ static bool parse_bool_value(const std::string & value) {
 // common_models_handler
 //
 
-static std::string get_default_local_path(const std::string & url) {
-    auto f = string_split<std::string>(url, '#').front();
-    f = string_split<std::string>(f, '?').front();
-    return fs_get_cache_file(string_split<std::string>(f, '/').back());
+static common_download_progress to_progress(const llama_dl_progress & p) {
+    common_download_progress out;
+    out.url        = p.url ? p.url : "";
+    out.downloaded = p.downloaded;
+    out.total      = p.total;
+    out.cached     = p.cached;
+    return out;
 }
 
-static bool spec_types_is_default(const common_params & params) {
-    return params.speculative.types == std::vector<enum common_speculative_type>{COMMON_SPECULATIVE_TYPE_NONE};
+static llama_dl_callback to_raw_callback(common_download_callback * callback) {
+    return {
+        callback,
+        [](void * ctx, const llama_dl_progress * p) {
+            static_cast<common_download_callback *>(ctx)->on_start(to_progress(*p));
+        },
+        [](void * ctx, const llama_dl_progress * p) {
+            static_cast<common_download_callback *>(ctx)->on_update(to_progress(*p));
+        },
+        [](void * ctx, const llama_dl_progress * p, bool ok) {
+            static_cast<common_download_callback *>(ctx)->on_done(to_progress(*p), ok);
+        },
+        [](void * ctx) {
+            return static_cast<common_download_callback *>(ctx)->is_cancelled();
+        },
+    };
+}
+
+static size_t spec_types_from_gguf(const char * path, int32_t * types, size_t cap) {
+    const auto found = common_speculative_types_from_gguf(path);
+    const size_t n = std::min(found.size(), cap);
+    for (size_t i = 0; i < n; ++i) {
+        types[i] = found[i];
+    }
+    return n;
+}
+
+[[noreturn]] static void throw_args_error(int32_t kind, uint8_t * message, size_t len) {
+    const std::string text(reinterpret_cast<const char *>(message), len);
+    llama_args_free_buffer(message, len);
+    if (kind == LLAMA_ARGS_ERROR_INVALID_ARGUMENT) {
+        throw std::invalid_argument(text);
+    }
+    throw std::runtime_error(text);
+}
+
+void common_models_handler_deleter::operator()(llama_args_models_handler * handler) const {
+    llama_args_models_handler_free(handler);
 }
 
 common_models_handler common_models_handler_init(const common_params & params, llama_example curr_ex) {
-    common_download_hf_plan plan;
-    common_download_hf_plan plan_spec;
-    common_download_opts opts;
+    const bool use_mmproj = std::find(mmproj_examples.begin(), mmproj_examples.end(), curr_ex) != mmproj_examples.end();
+    const auto data = common_params_to_cbor(params);
 
-    const bool spec_type_draft_mtp = std::find(params.speculative.types.begin(),
-                                        params.speculative.types.end(),
-                                        COMMON_SPECULATIVE_TYPE_DRAFT_MTP) != params.speculative.types.end();
-
-    const bool spec_type_draft_dflash = std::find(params.speculative.types.begin(),
-                                           params.speculative.types.end(),
-                                           COMMON_SPECULATIVE_TYPE_DRAFT_DFLASH) != params.speculative.types.end();
-
-    const bool spec_type_draft_eagle3 = std::find(params.speculative.types.begin(),
-                                           params.speculative.types.end(),
-                                           COMMON_SPECULATIVE_TYPE_DRAFT_EAGLE3) != params.speculative.types.end();
-
-    const bool spec_type_draft_dspark = std::find(params.speculative.types.begin(),
-                                           params.speculative.types.end(),
-                                           COMMON_SPECULATIVE_TYPE_DRAFT_DSPARK) != params.speculative.types.end();
-
-    // only download mmproj if the current example is using it
-    bool use_mmproj = false;
-    for (const auto & ex : mmproj_examples) {
-        if (curr_ex == ex) {
-            use_mmproj = true;
-            break;
-        }
+    uint8_t * error = nullptr;
+    size_t error_len = 0;
+    int32_t kind = LLAMA_ARGS_ERROR_RUNTIME;
+    llama_args_models_handler * handler =
+        llama_args_models_handler_init(data.data(), data.size(), use_mmproj, &error, &error_len, &kind);
+    if (!handler) {
+        throw_args_error(kind, error, error_len);
     }
 
-    opts.bearer_token    = params.hf_token;
-    opts.offline         = params.offline;
-    opts.download_mtp    = spec_type_draft_mtp;
-    opts.download_eagle3 = spec_type_draft_eagle3;
-    opts.download_dflash = spec_type_draft_dflash;
-    opts.download_dspark = spec_type_draft_dspark;
-    opts.download_mmproj = use_mmproj && !params.no_mmproj
-                        && params.mmproj.path.empty() && params.mmproj.url.empty();
-
-    if (!params.model.hf_repo.empty()) {
-        plan = common_download_get_hf_plan(params.model, opts);
-    }
-
-    if (!params.speculative.draft.mparams.hf_repo.empty()) {
-        // without a requested type, discover every sidecar the draft repo ships to infer the type later
-        auto opts_spec = opts;
-        if (spec_types_is_default(params)) {
-            opts_spec.download_mtp    = true;
-            opts_spec.download_dflash = true;
-            opts_spec.download_eagle3 = true;
-            opts_spec.download_dspark = true;
-        }
-        plan_spec = common_download_get_hf_plan(params.speculative.draft.mparams, opts_spec);
-    }
-
-    return common_models_handler{plan, plan_spec, opts};
+    common_models_handler out;
+    out.impl.reset(handler);
+    return out;
 }
 
 bool common_models_handler_is_preset_repo(const common_models_handler & handler) {
-    return !handler.plan.preset.url.empty();
-}
-
-static std::vector<common_download_task> build_url_tasks(const common_params_model & model, common_download_opts opts) {
-    auto parts = common_download_get_all_parts(model.url);
-    std::vector<common_download_task> tasks;
-
-    // single-part: download straight to model.path if the user gave one (-m), else the cache default
-    if (parts.size() == 1) {
-        common_download_task task;
-        task.url        = parts[0];
-        task.local_path = model.path.empty() ? get_default_local_path(parts[0]) : model.path;
-        task.opts       = opts;
-        tasks.push_back(std::move(task));
-        return tasks;
-    }
-
-    // multi-part: place each part under the user's -m directory (if given), else the cache default
-    std::string base_dir;
-    if (!model.path.empty()) {
-        auto pos = model.path.rfind('/');
-        base_dir = pos == std::string::npos ? std::string(".") : model.path.substr(0, pos);
-    }
-
-    for (const auto & part : parts) {
-        common_download_task task;
-        task.url  = part;
-        task.opts = opts;
-
-        std::string local = get_default_local_path(part);
-        if (!base_dir.empty()) {
-            auto pos = local.rfind('/');
-            std::string name = pos == std::string::npos ? local : local.substr(pos + 1);
-            local = base_dir + "/" + name;
-        }
-        task.local_path = local;
-        tasks.push_back(std::move(task));
-    }
-    return tasks;
+    return llama_args_models_handler_is_preset_repo(handler.impl.get());
 }
 
 void common_models_handler_apply(common_models_handler & handler, common_params & params, common_download_callback * callback) {
-    std::vector<common_download_task> tasks;
+    const auto data = common_params_to_cbor(params);
+    const llama_dl_callback raw = callback ? to_raw_callback(callback) : llama_dl_callback{};
 
-    auto & plan      = handler.plan;
-    auto & plan_spec = handler.plan_spec;
-
-    auto opts = handler.opts; // copy
-    opts.callback = callback;
-
-    // handle plain "url" if needed
-    auto handle_url = [&](common_params_model & model) {
-        if (!model.url.empty()) {
-            if (model.path.empty()) {
-                model.path = get_default_local_path(model.url);
-            }
-        }
-    };
-    handle_url(params.model);
-    handle_url(params.mmproj);
-    handle_url(params.speculative.draft.mparams);
-
-    // optionally, if docker repo is set, resolve it
-    if (!params.model.docker_repo.empty()) {
-        params.model.url  = common_docker_resolve_model(params.model.docker_repo);
-        params.model.path = get_default_local_path(params.model.url);
+    uint8_t * out = nullptr;
+    size_t out_len = 0;
+    int32_t kind = LLAMA_ARGS_ERROR_RUNTIME;
+    const bool ok = llama_args_models_handler_apply(handler.impl.get(), data.data(), data.size(),
+                                                    callback ? &raw : nullptr, spec_types_from_gguf,
+                                                    &out, &out_len, &kind);
+    if (!ok) {
+        throw_args_error(kind, out, out_len);
     }
 
-    // handle plain "url" tasks (non-hf)
-    if (!params.model.url.empty()) {
-        auto url_tasks = build_url_tasks(params.model, opts);
-        // the first part is what gets loaded, so point params.model.path at it
-        if (!url_tasks.empty()) {
-            std::string first_path = url_tasks.front().local_path;
-            url_tasks.front().on_done = [&, first_path]() { params.model.path = first_path; };
-        }
-        for (auto & task : url_tasks) {
-            tasks.push_back(std::move(task));
-        }
-    }
-    if (!params.mmproj.url.empty()) {
-        common_download_task task;
-        task.url        = params.mmproj.url;
-        task.local_path = params.mmproj.path;
-        task.opts       = opts;
-        tasks.push_back(task);
-    }
-    bool had_spec_url = false;
-    if (!params.speculative.draft.mparams.url.empty()) {
-        common_download_task task;
-        task.url        = params.speculative.draft.mparams.url;
-        task.local_path = params.speculative.draft.mparams.path;
-        task.opts       = opts;
-        tasks.push_back(task);
-        had_spec_url = true;
-    }
-
-    // handle hf_plan tasks
-    auto add_tasks = [&opts, &tasks](const hf_cache::hf_files  & model_files,
-                                    const hf_cache::hf_file    & primary,
-                                    common_params_model        & model) {
-        for (size_t i = 0; i < model_files.size(); ++i) {
-            auto & model_file = model_files[i];
-            bool is_primary = (model_file.path == primary.path);
-            tasks.emplace_back(model_file, opts, [&, is_primary]() {
-                if (is_primary) {
-                    // the primary file is the first split (00001-of), use it as model path
-                    model.path = hf_cache::finalize_file(model_file);
-                } else {
-                    hf_cache::finalize_file(model_file);
-                }
-            });
-        }
-    };
-
-    // an explicit draft file selection (e.g. -md with -hfd) disables the sidecar resolution of the draft repo
-    if (!params.speculative.draft.mparams.hf_file.empty()) {
-        plan_spec.mtp    = {};
-        plan_spec.dflash = {};
-        plan_spec.eagle3 = {};
-        plan_spec.dspark = {};
-    }
-
-    // infer the speculative type from the sidecar shipped by the draft repo when none is requested
-    if (spec_types_is_default(params)) {
-        if (!plan_spec.mtp.local_path.empty()) {
-            params.speculative.types = { COMMON_SPECULATIVE_TYPE_DRAFT_MTP };
-            plan_spec.dspark = {};
-            plan_spec.dflash = {};
-            plan_spec.eagle3 = {};
-        } else if (!plan_spec.dspark.local_path.empty()) {
-            // dspark outranks dflash, its sidecar carries the extra Markov head
-            params.speculative.types = { COMMON_SPECULATIVE_TYPE_DRAFT_DSPARK };
-            plan_spec.dflash = {};
-            plan_spec.eagle3 = {};
-        } else if (!plan_spec.dflash.local_path.empty()) {
-            params.speculative.types = { COMMON_SPECULATIVE_TYPE_DRAFT_DFLASH };
-            plan_spec.eagle3 = {};
-        } else if (!plan_spec.eagle3.local_path.empty()) {
-            params.speculative.types = { COMMON_SPECULATIVE_TYPE_DRAFT_EAGLE3 };
-        }
-    }
-
-    // infer the speculative type from the draft GGUF metadata when none is requested
-    // note: reads only the first split - sharded drafts need an explicit --spec-type
-    if (spec_types_is_default(params) && !params.speculative.draft.mparams.path.empty()) {
-        const auto types_gguf = common_speculative_types_from_gguf(params.speculative.draft.mparams.path);
-        if (!types_gguf.empty()) {
-            params.speculative.types = types_gguf;
-        }
-    }
-
-    // when a sidecar type is requested, the draft repo resolves to its sidecar instead of a full model
-    const bool spec_sidecar_found = !plan_spec.mtp.local_path.empty() ||
-                                    !plan_spec.dflash.local_path.empty() ||
-                                    !plan_spec.eagle3.local_path.empty() ||
-                                    !plan_spec.dspark.local_path.empty();
-    if (!plan_spec.mtp.local_path.empty() && !had_spec_url) {
-        tasks.emplace_back(plan_spec.mtp, opts, [&]() {
-            // only use the discovered MTP head when no draft path is set yet
-            if (params.speculative.draft.mparams.path.empty()) {
-                params.speculative.draft.mparams.path = hf_cache::finalize_file(plan_spec.mtp);
-            } else {
-                hf_cache::finalize_file(plan_spec.mtp);
-            }
-        });
-    }
-    if (!plan_spec.dflash.local_path.empty() && !had_spec_url) {
-        tasks.emplace_back(plan_spec.dflash, opts, [&]() {
-            // only use the discovered DFlash sidecar when no draft path is set yet
-            if (params.speculative.draft.mparams.path.empty()) {
-                params.speculative.draft.mparams.path = hf_cache::finalize_file(plan_spec.dflash);
-            } else {
-                hf_cache::finalize_file(plan_spec.dflash);
-            }
-        });
-    }
-    if (!plan_spec.eagle3.local_path.empty() && !had_spec_url) {
-        tasks.emplace_back(plan_spec.eagle3, opts, [&]() {
-            // only use the discovered Eagle3 sidecar when no draft path is set yet
-            if (params.speculative.draft.mparams.path.empty()) {
-                params.speculative.draft.mparams.path = hf_cache::finalize_file(plan_spec.eagle3);
-            } else {
-                hf_cache::finalize_file(plan_spec.eagle3);
-            }
-        });
-    }
-    if (!plan_spec.dspark.local_path.empty() && !had_spec_url) {
-        tasks.emplace_back(plan_spec.dspark, opts, [&]() {
-            // only use the discovered DSpark sidecar when no draft path is set yet
-            if (params.speculative.draft.mparams.path.empty()) {
-                params.speculative.draft.mparams.path = hf_cache::finalize_file(plan_spec.dspark);
-            } else {
-                hf_cache::finalize_file(plan_spec.dspark);
-            }
-        });
-    }
-
-    // a wired draft sidecar counts as an explicit draft for the main plan fallback below
-    if (spec_sidecar_found) {
-        had_spec_url = true;
-    }
-
-    // handle plan_spec (e.g. --spec-draft-hf)
-    if (!plan_spec.model_files.empty() && !had_spec_url && !spec_sidecar_found) {
-        add_tasks(plan_spec.model_files, plan_spec.primary, params.speculative.draft.mparams);
-        had_spec_url = true;
-    }
-
-    if (!plan.model_files.empty()) {
-        add_tasks(plan.model_files, plan.primary, params.model);
-    }
-    if (!plan.mmproj.local_path.empty()) {
-        tasks.emplace_back(plan.mmproj, opts, [&]() {
-            params.mmproj.path = hf_cache::finalize_file(plan.mmproj);
-        });
-    }
-    if (!plan.mtp.local_path.empty() && !had_spec_url) {
-        tasks.emplace_back(plan.mtp, opts, [&]() {
-            // only fall back to the discovered MTP head when no draft was explicitly provided
-            if (params.speculative.draft.mparams.empty()) {
-                params.speculative.draft.mparams.path = hf_cache::finalize_file(plan.mtp);
-            } else {
-                hf_cache::finalize_file(plan.mtp);
-            }
-        });
-    }
-    if (!plan.dflash.local_path.empty() && !had_spec_url) {
-        tasks.emplace_back(plan.dflash, opts, [&]() {
-            // only fall back to the discovered DFlash sidecar when no draft was explicitly provided
-            if (params.speculative.draft.mparams.empty()) {
-                params.speculative.draft.mparams.path = hf_cache::finalize_file(plan.dflash);
-            } else {
-                hf_cache::finalize_file(plan.dflash);
-            }
-        });
-    }
-    if (!plan.eagle3.local_path.empty() && !had_spec_url) {
-        tasks.emplace_back(plan.eagle3, opts, [&]() {
-            // only fall back to the discovered Eagle3 sidecar when no draft was explicitly provided
-            if (params.speculative.draft.mparams.empty()) {
-                params.speculative.draft.mparams.path = hf_cache::finalize_file(plan.eagle3);
-            } else {
-                hf_cache::finalize_file(plan.eagle3);
-            }
-        });
-    }
-    if (!plan.dspark.local_path.empty() && !had_spec_url) {
-        tasks.emplace_back(plan.dspark, opts, [&]() {
-            // only fall back to the discovered DSpark sidecar when no draft was explicitly provided
-            if (params.speculative.draft.mparams.empty()) {
-                params.speculative.draft.mparams.path = hf_cache::finalize_file(plan.dspark);
-            } else {
-                hf_cache::finalize_file(plan.dspark);
-            }
-        });
-    }
-    if (!plan.preset.local_path.empty()) {
-        tasks.emplace_back(plan.preset, opts, [&]() {
-            // if HF repo is a preset repo, we simply run server in router mode with the preset.ini file
-            params.models_preset_hf = params.model.hf_repo; // only for showing a warning
-            params.models_preset    = hf_cache::finalize_file(plan.preset);
-            params.model = common_params_model{}; // make sure to clear model, so server starts in router mode
-        });
-    }
-
-    // run all tasks in parallel
-    if (!params.offline) {
-        // if duplicated files are found, only download once (but still call on_done for each task)
-        std::unordered_map<std::string, common_download_task *> unique_tasks;
-        for (auto & task : tasks) {
-            auto it = unique_tasks.find(task.local_path);
-            if (it == unique_tasks.end()) {
-                unique_tasks[task.local_path] = &task;
-            }
-        }
-        std::vector<common_download_task> unique_tasks_vec;
-        for (auto & pair : unique_tasks) {
-            LOG_DBG("download task: %s -> %s\n", pair.second->url.c_str(), pair.second->local_path.c_str());
-            unique_tasks_vec.push_back(*pair.second);
-        }
-        common_download_run_tasks(unique_tasks_vec);
-    }
-
-    // download successful, update params with the downloaded paths
-    for (const auto & task : tasks) {
-        if (task.on_done) {
-            task.on_done();
-        }
-    }
+    const std::vector<uint8_t> result(out, out + out_len);
+    llama_args_free_buffer(out, out_len);
+    common_params_from_cbor(result.data(), result.size(), params);
 }
 
 //
@@ -1456,11 +1189,20 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         {"-cl", "--cache-list"},
         "show list of models in cache",
         [](common_params &) {
-            auto models = common_list_cached_models();
-            printf("number of models in cache: %zu\n", models.size());
-            for (size_t i = 0; i < models.size(); i++) {
-                printf("%4zu. %s\n", i + 1, models[i].to_string().c_str());
+            size_t n_models = 0;
+            char * error = nullptr;
+            char ** models = llama_dl_list_cached_models(&n_models, &error);
+            if (error) {
+                const std::string message = error;
+                llama_dl_free_string(error);
+                llama_dl_free_strings(models, n_models);
+                throw std::runtime_error(message);
             }
+            printf("number of models in cache: %zu\n", n_models);
+            for (size_t i = 0; i < n_models; i++) {
+                printf("%4zu. %s\n", i + 1, models[i]);
+            }
+            llama_dl_free_strings(models, n_models);
             exit(0);
         }
     ));
@@ -3566,6 +3308,21 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
             params.n_threads_http = value;
         }
     ).set_examples({LLAMA_EXAMPLE_SERVER}).set_env("LLAMA_ARG_THREADS_HTTP"));
+    add_opt(common_arg(
+        {"--http-workers"}, "N|auto",
+        "number of async workers of the Rust HTTP transport, either an exact number or 'auto' (default: auto)",
+        [](common_params & params, const std::string & value) {
+            if (value == "auto") {
+                params.http_workers = -1;
+                return;
+            }
+            const int n = std::stoi(value);
+            if (n < 1) {
+                throw std::invalid_argument("--http-workers must be 'auto' or a positive number");
+            }
+            params.http_workers = n;
+        }
+    ).set_examples({LLAMA_EXAMPLE_SERVER}).set_env("LLAMA_ARG_HTTP_WORKERS"));
     add_opt(common_arg(
         {"--cache-prompt"},
         {"--no-cache-prompt"},

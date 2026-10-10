@@ -1,0 +1,12 @@
+[workspace]
+resolver = "3"
+members = ["llama-sys", "llama", "llama-http", "llama-schema", "llama-download", "llama-quantize-core", "llama-quantize", "llama-sampling", "llama-args", "llama-rs", "tools/tokenize", "tools/gguf-split"]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+rust-version = "1.98"
+
+[profile.cmake]
+inherits = "release"
+incremental = true

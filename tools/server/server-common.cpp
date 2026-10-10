@@ -1,5 +1,4 @@
 #include "common.h"
-#include "download.h"
 #include "log.h"
 #include "llama.h"
 #include "mtmd.h"
@@ -8,6 +7,8 @@
 #include "base64.hpp"
 
 #include "server-common.h"
+
+#include "llama_download.h"
 
 #include <random>
 #include <sstream>
@@ -1088,15 +1089,22 @@ static void handle_media(
     if (string_starts_with(url, "http")) {
         // download remote image
         // TODO @ngxson : maybe make these params configurable
-        common_remote_params params;
-        params.max_size = 1024 * 1024 * 10; // 10MB
-        params.timeout  = 10; // seconds
+        const size_t   max_size = 1024 * 1024 * 10; // 10MB
+        const uint64_t timeout  = 10; // seconds
         SRV_INF("downloading image from '%s'\n", url.c_str());
-        auto res = common_remote_get_content(url, params);
-        if (200 <= res.first && res.first < 300) {
-            SRV_INF("downloaded %zu bytes\n", res.second.size());
-            raw_buffer data;
-            data.insert(data.end(), res.second.begin(), res.second.end());
+        int64_t status = 0;
+        uint8_t * body = nullptr;
+        size_t body_len = 0;
+        char * error = llama_dl_remote_get(url.c_str(), nullptr, nullptr, 0, timeout, max_size, &status, &body, &body_len);
+        if (error) {
+            const std::string message = error;
+            llama_dl_free_string(error);
+            throw std::runtime_error(message);
+        }
+        raw_buffer data(body, body + body_len);
+        llama_dl_free_buffer(body, body_len);
+        if (200 <= status && status < 300) {
+            SRV_INF("downloaded %zu bytes\n", data.size());
             out_files.push_back(data);
         } else {
             throw std::runtime_error("Failed to download image");

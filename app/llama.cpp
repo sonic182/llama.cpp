@@ -1,6 +1,7 @@
 #include "build-info.h"
 
 #include "llama.h"
+#include "llama_quantize.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -19,7 +20,6 @@ int llama_completion(int argc, char ** argv);
 int llama_bench(int argc, char ** argv);
 int llama_batched_bench(int argc, char ** argv);
 int llama_fit_params(int argc, char ** argv);
-int llama_quantize(int argc, char ** argv);
 int llama_perplexity(int argc, char ** argv);
 int llama_download(int argc, char ** argv);
 
@@ -70,7 +70,7 @@ static const command cmds[] = {
     {"bench",         "Benchmark prompt processing and text generation",    {},           true,          llama_bench        },
     {"batched-bench", "Benchmark batched decoding performance",             {},           true,          llama_batched_bench},
     {"fit-params",    "Compute parameters to fit a model in device memory", {},           true,          llama_fit_params   },
-    {"quantize",      "Quantize a model",                                   {},           true,          llama_quantize     },
+    {"quantize",      "Quantize a model",                                   {},           true,          [](int argc, char ** argv) { return llama_rs_quantize(argc, argv); }},
     {"perplexity",    "Compute model perplexity and KL divergence",         {},           true,          llama_perplexity   },
     {"version",       "Show version",                                       {},           false,         version,           true },
     {"licenses",      "Show third-party licenses",                          {"credits"},  false,         licenses,          true },

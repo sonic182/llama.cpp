@@ -3,6 +3,7 @@
 #endif
 
 #include "sampling.h"
+#include "llama_sampling.h"
 
 #include <cassert>
 #include <string>
@@ -52,7 +53,7 @@ static void test(const std::string & test_desc, const std::string & grammar_str,
     fprintf(stderr, "⚫ Testing %s\n%s\n", test_desc.c_str(), grammar_str.c_str());
     fflush(stderr);
 
-    auto * grammar = llama_sampler_init_llg(vocab, "lark", grammar_str.c_str());
+    auto * grammar = llama_rs_sampler_init_llg(vocab, "lark", grammar_str.c_str());
 
     fprintf(stderr, "  🔵 Valid strings:\n");
 
@@ -1106,7 +1107,7 @@ static void test_sampler_chain(void) {
     const auto grammar_data = R"(%llguidance {}
 start: /[A-Z ]*/)";
 
-    llama_sampler_chain_add(sampler, llama_sampler_init_llg(vocab, "lark", grammar_data));
+    llama_sampler_chain_add(sampler, llama_rs_sampler_init_llg(vocab, "lark", grammar_data));
     llama_sampler_chain_add(sampler, llama_sampler_init_dist(42));
 
     auto input  = "ALL YOUR BASE ARE BELONG TO US";

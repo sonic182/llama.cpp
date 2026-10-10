@@ -146,6 +146,7 @@ endif()
 
 if (LLAMA_LLGUIDANCE)
     llama_build_and_test(test-grammar-llguidance.cpp ARGS ${PROJECT_SOURCE_DIR}/models/ggml-vocab-llama-bpe.gguf)
+    target_include_directories(test-grammar-llguidance PRIVATE ${PROJECT_SOURCE_DIR}/rust/llama-sampling/include)
 endif ()
 
 llama_build(test-recurrent-state-rollback.cpp)
@@ -156,6 +157,7 @@ if (NOT WIN32 OR NOT BUILD_SHARED_LIBS)
     llama_build_and_test(test-unicode.cpp)
     llama_build_and_test(test-sampling.cpp)
     llama_build_and_test(test-reasoning-budget.cpp)
+    target_include_directories(test-reasoning-budget PRIVATE ${PROJECT_SOURCE_DIR}/rust/llama-sampling/include)
     llama_build_and_test(test-grammar-parser.cpp)
     llama_build_and_test(test-grammar-integration.cpp)
     llama_build_and_test(test-llama-grammar.cpp)
@@ -297,7 +299,18 @@ llama_build_and_test(test-thread-safety.cpp ARGS -m "${MODEL_DEST}" -ngl 99 -p "
 set_tests_properties(test-thread-safety PROPERTIES FIXTURES_REQUIRED test-download-model)
 
 llama_build_and_test(test-arg-parser.cpp)
+target_link_libraries(test-arg-parser PRIVATE llama-download-rs)
+
+llama_build(${PROJECT_SOURCE_DIR}/scripts/rust-golden/params_driver.cpp)
+target_include_directories(params_driver PRIVATE ${PROJECT_SOURCE_DIR}/rust/llama-args/include)
+find_package(Python3 COMPONENTS Interpreter)
+if (Python3_Interpreter_FOUND)
+    add_test(NAME test-params-golden
+        COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/rust-golden/params_diff.py check $<TARGET_FILE:params_driver>)
+    set_tests_properties(test-params-golden PROPERTIES LABELS main)
+endif()
 llama_build_and_test(test-model-resolution.cpp)
+target_link_libraries(test-model-resolution PRIVATE llama-download-rs)
 # the test serves its repos from an httplib server, and the library links it privately
 target_link_libraries(test-model-resolution PRIVATE cpp-httplib)
 
@@ -376,6 +389,7 @@ if (NOT LLAMA_USE_SYSTEM_GGML)
 endif()
 
 llama_build(test-export-graph-ops.cpp)
+target_link_libraries(test-export-graph-ops PRIVATE llama-download-rs)
 if (TARGET gguf-model-data)
     target_link_libraries(test-export-graph-ops PRIVATE gguf-model-data)
     target_compile_definitions(test-export-graph-ops PRIVATE LLAMA_HF_FETCH)

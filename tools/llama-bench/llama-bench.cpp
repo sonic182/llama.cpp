@@ -22,7 +22,6 @@
 #include "arg.h"
 #include "build-info.h"
 #include "common.h"
-#include "download.h"
 #include "fit.h"
 #include "ggml.h"
 #include "llama.h"

@@ -1504,21 +1504,6 @@ common_init_result_ptr common_init_from_params(common_params & params, bool mode
 
 common_init_result::~common_init_result() = default;
 
-std::string common_get_model_endpoint() {
-    std::string endpoint = common_get_env("MODEL_ENDPOINT");
-    if (endpoint.empty()) {
-        // the HF_ENDPOINT variable is respected for backward compatibility
-        endpoint = common_get_env("HF_ENDPOINT");
-    }
-    if (endpoint.empty()) {
-        return "https://huggingface.co/";
-    }
-    if (endpoint.back() != '/') {
-        endpoint += '/';
-    }
-    return endpoint;
-}
-
 char * common_get_model_or_exit(int argc, char * argv[]) {
     if (argc > 1) {
         return argv[1];

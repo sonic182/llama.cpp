@@ -2,7 +2,8 @@
 #include "preset.h"
 #include "peg-parser.h"
 #include "log.h"
-#include "download.h"
+
+#include "llama_download.h"
 
 #include <fstream>
 #include <sstream>
@@ -350,13 +351,22 @@ common_presets common_preset_context::load_from_ini(const std::string & path, co
 common_presets common_preset_context::load_from_cache() const {
     common_presets out;
 
-    auto cached_models = common_list_cached_models();
-    for (const auto & model : cached_models) {
+    size_t n_models = 0;
+    char * error = nullptr;
+    char ** models = llama_dl_list_cached_models(&n_models, &error);
+    if (error) {
+        const std::string message = error;
+        llama_dl_free_string(error);
+        llama_dl_free_strings(models, n_models);
+        throw std::runtime_error(message);
+    }
+    for (size_t i = 0; i < n_models; i++) {
         common_preset preset;
-        preset.name = model.to_string();
-        preset.set_option(*this, "LLAMA_ARG_HF_REPO", model.to_string());
+        preset.name = models[i];
+        preset.set_option(*this, "LLAMA_ARG_HF_REPO", preset.name);
         out[preset.name] = preset;
     }
+    llama_dl_free_strings(models, n_models);
 
     return out;
 }

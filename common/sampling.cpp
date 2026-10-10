@@ -3,9 +3,10 @@
 #include "common.h"
 #include "fit.h"
 #include "log.h"
-#include "reasoning-budget.h"
 
 #include "ggml.h"
+
+#include "llama_sampling.h"
 
 #include <algorithm>
 #include <cctype>
@@ -212,7 +213,7 @@ struct common_sampler * common_sampler_init(
     const std::string & grammar_str = common_grammar_value(params.grammar);
     if (grammar_str.compare(0, 11, "%llguidance") == 0) {
 #ifdef LLAMA_USE_LLGUIDANCE
-        grmr = llama_sampler_init_llg(vocab, "lark", grammar_str.c_str());
+        grmr = llama_rs_sampler_init_llg(vocab, "lark", grammar_str.c_str());
 #else
         GGML_ABORT("llguidance (cmake -DLLAMA_LLGUIDANCE=ON) is not enabled");
 #endif // LLAMA_USE_LLGUIDANCE
@@ -309,12 +310,20 @@ struct common_sampler * common_sampler_init(
 
     // reasoning budget sampler (skip when budget is unlimited unless a lazy grammar is active, which needs rbudget for thinking-block suppression)
     if (!params.reasoning_budget_start.empty() && !params.reasoning_budget_end.empty() && (params.grammar_lazy || params.reasoning_budget_tokens >= 0 || params.reasoning_control)) {
-        rbudget = common_reasoning_budget_init(
+        const size_t start_len = params.reasoning_budget_start.size();
+        llama_tokens end_tokens;
+        std::vector<size_t> end_lens;
+        for (const auto & seq : params.reasoning_budget_end) {
+            end_tokens.insert(end_tokens.end(), seq.begin(), seq.end());
+            end_lens.push_back(seq.size());
+        }
+        rbudget = llama_rs_reasoning_budget_init(
             vocab,
-            {params.reasoning_budget_start},
-            params.reasoning_budget_end,
-            params.reasoning_budget_forced,
-            params.reasoning_budget_tokens < 0 ? INT_MAX : params.reasoning_budget_tokens);
+            params.reasoning_budget_start.data(), &start_len, 1,
+            end_tokens.data(), end_lens.data(), end_lens.size(),
+            params.reasoning_budget_forced.data(), params.reasoning_budget_forced.size(),
+            params.reasoning_budget_tokens < 0 ? INT_MAX : params.reasoning_budget_tokens,
+            LLAMA_RS_REASONING_BUDGET_IDLE);
 
         for (const auto & token : prefill_tokens) {
             llama_sampler_accept(rbudget, token);
@@ -458,8 +467,8 @@ static bool grammar_should_apply(struct common_sampler * gsmpl) {
     }
     if (gsmpl->params.grammar_lazy) {
         // if grammar is lazy, only apply when reasoning budget is not active
-        const auto state = common_reasoning_budget_get_state(gsmpl->rbudget);
-        return state == REASONING_BUDGET_IDLE || state == REASONING_BUDGET_DONE;
+        const auto state = llama_rs_reasoning_budget_get_state(gsmpl->rbudget);
+        return state == LLAMA_RS_REASONING_BUDGET_IDLE || state == LLAMA_RS_REASONING_BUDGET_DONE;
     }
     return true;
 }
@@ -478,13 +487,12 @@ void common_sampler_accept(struct common_sampler * gsmpl, llama_token token, boo
         llama_sampler_accept(gsmpl->rbudget, token);
 
         // if done, replay end sequence which may contain a grammar trigger
-        const bool is_done = common_reasoning_budget_get_state(gsmpl->rbudget) == REASONING_BUDGET_DONE;
+        const bool is_done = llama_rs_reasoning_budget_get_state(gsmpl->rbudget) == LLAMA_RS_REASONING_BUDGET_DONE;
         if (gsmpl->grmr && !accept_grammar && is_done) {
-            const llama_tokens * end_seq = common_reasoning_budget_get_end_match(gsmpl->rbudget);
-            if (end_seq) {
-                for (const llama_token end_token : *end_seq) {
-                    llama_sampler_accept(gsmpl->grmr, end_token);
-                }
+            size_t n_end = 0;
+            const llama_token * end_match = llama_rs_reasoning_budget_get_end_match(gsmpl->rbudget, &n_end);
+            for (size_t i = 0; i < n_end; ++i) {
+                llama_sampler_accept(gsmpl->grmr, end_match[i]);
             }
         }
     }
@@ -723,7 +731,7 @@ bool common_sampler_reasoning_budget_force(struct common_sampler * gsmpl) {
         return false;
     }
 
-    return common_reasoning_budget_force(gsmpl->rbudget);
+    return llama_rs_reasoning_budget_force(gsmpl->rbudget);
 }
 
 // helpers

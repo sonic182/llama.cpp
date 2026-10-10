@@ -1,8 +1,9 @@
 #include "arg.h"
 #include "common.h"
-#include "download.h"
 #include "llama.h"
 #include "speculative.h"
+
+#include "llama_download.h"
 
 #include <cmath>
 #include <limits>
@@ -10,6 +11,21 @@
 #include <vector>
 #include <sstream>
 #include <unordered_set>
+
+static std::pair<long, std::vector<char>> remote_get(const char * url, size_t max_size = 0) {
+    int64_t status = 0;
+    uint8_t * body = nullptr;
+    size_t len = 0;
+    char * error = llama_dl_remote_get(url, nullptr, nullptr, 0, 0, max_size, &status, &body, &len);
+    if (error) {
+        const std::string message = error;
+        llama_dl_free_string(error);
+        throw std::runtime_error(message);
+    }
+    std::vector<char> data(body, body + len);
+    llama_dl_free_buffer(body, len);
+    return { long(status), data };
+}
 
 #undef NDEBUG
 #include <cassert>
@@ -369,7 +385,7 @@ static void test(void) {
 
     {
         printf("test-arg-parser: test good URL\n\n");
-        auto res = common_remote_get_content(GOOD_URL, {});
+        auto res = remote_get(GOOD_URL);
         assert(res.first == 200);
         assert(res.second.size() > 0);
         std::string str(res.second.data(), res.second.size());
@@ -378,16 +394,14 @@ static void test(void) {
 
     {
         printf("test-arg-parser: test bad URL\n\n");
-        auto res = common_remote_get_content(BAD_URL, {});
+        auto res = remote_get(BAD_URL);
         assert(res.first == 404);
     }
 
     {
         printf("test-arg-parser: test max size error\n");
-        common_remote_params params;
-        params.max_size = 1;
         try {
-            common_remote_get_content(GOOD_URL, params);
+            remote_get(GOOD_URL, 1);
             assert(false && "it should throw an error");
         } catch (std::exception & e) {
             printf("  expected error: %s\n\n", e.what());

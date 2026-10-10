@@ -1,0 +1,731 @@
+files	org/model	Model-Q4_K_M.gguf	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf
+files	org/model	Model-Q8_0.gguf	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf
+files	org/model	README.md	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md
+files	org/model	mmproj-f16.gguf	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf
+files	org/model	sub/x-00001-of-00002.gguf	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf
+files	org/model	sub/x-00002-of-00002.gguf	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl7
+files	org/model	Model-Q4_K_M.gguf	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf
+files	org/model	Model-Q8_0.gguf	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf
+files	org/model	README.md	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md
+files	org/model	mmproj-f16.gguf	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf
+files	org/model	sub/x-00001-of-00002.gguf	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf
+files	org/model	sub/x-00002-of-00002.gguf	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf
+files	org/nofallback	Model-IQ2_XS.gguf	ROOT/models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf
+files	org/shared	Model-F16.gguf	ROOT/models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf
+files	org/shared	Model-Q8_0.gguf	ROOT/models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl7
+models	org/model	Q4_K_M
+models	org/model	Q8_0
+models	org/nofallback	IQ2_XS
+models	org/shared	F16
+models	org/shared	Q8_0
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl7
+resolve	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl7
+resolve	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl7
+resolve	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl7
+resolve	ROOT/models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl7
+resolve	ROOT/models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl7
+resolve	<none>
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl7
+resolve	error
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl7
+remove	true
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+remove	false
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl2 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q8_0.gguf -> ../../blobs/bl2
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+remove	true
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--nofallback -> 
+tree d ./models--org--nofallback/blobs -> 
+tree d ./models--org--nofallback/refs -> 
+tree d ./models--org--nofallback/snapshots -> 
+tree d ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98 -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--nofallback/blobs/bl6 -> 
+tree f ./models--org--nofallback/refs/dev -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--nofallback/snapshots/fedcba9876543210fedcba9876543210fedcba98/Model-IQ2_XS.gguf -> ../../blobs/bl6
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+remove	true
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+remove	false
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+remove	error
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl1 -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7
+remove	true
+tree d . -> 
+tree d ./models--bad-- -> 
+tree d ./models--bad--/refs -> 
+tree d ./models--bad--/snapshots -> 
+tree d ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model -> 
+tree d ./models--org--model/blobs -> 
+tree d ./models--org--model/refs -> 
+tree d ./models--org--model/snapshots -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub -> 
+tree d ./models--org--shared -> 
+tree d ./models--org--shared/blobs -> 
+tree d ./models--org--shared/refs -> 
+tree d ./models--org--shared/snapshots -> 
+tree d ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567 -> 
+tree d ./not-a-repo -> 
+tree d ./not-a-repo/snapshots -> 
+tree f ./models--bad--/refs/main -> 
+tree f ./models--org--model/blobs/bl3 -> 
+tree f ./models--org--model/blobs/bl4 -> 
+tree f ./models--org--model/blobs/bl5 -> 
+tree f ./models--org--model/refs/main -> 
+tree f ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/README.md -> 
+tree f ./models--org--shared/blobs/bl7 -> 
+tree f ./models--org--shared/refs/main -> 
+tree l ./models--bad--/snapshots/0123456789abcdef0123456789abcdef01234567/Model-Q4_K_M.gguf -> ../../../blobs/bl1
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/mmproj-f16.gguf -> ../../blobs/bl3
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00001-of-00002.gguf -> ../../../blobs/bl4
+tree l ./models--org--model/snapshots/0123456789abcdef0123456789abcdef01234567/sub/x-00002-of-00002.gguf -> ../../../blobs/bl5
+tree l ./models--org--shared/snapshots/0123456789abcdef0123456789abcdef01234567/Model-F16.gguf -> ../../blobs/bl7

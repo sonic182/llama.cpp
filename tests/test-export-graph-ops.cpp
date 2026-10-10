@@ -7,7 +7,9 @@
 #include "gguf-model-data.h"
 #include "gguf.h"
 #include "ggml-backend.h"
-#include "download.h"
+#include "json.h"
+
+#include "llama_download.h"
 
 #include <array>
 #include <vector>
@@ -158,7 +160,15 @@ int main(int argc, char ** argv) {
         }
     } else {
 #ifdef LLAMA_HF_FETCH
-        auto [hf_repo, hf_quant] = common_download_split_repo_tag(params.model.hf_repo);
+        char * raw = llama_dl_split_repo_tag(params.model.hf_repo.c_str());
+        const common_json split = common_json::parse(raw);
+        llama_dl_free_string(raw);
+        if (!split.value("ok", false)) {
+            LOG_ERR("%s", split.value("error", std::string()).c_str());
+            return 1;
+        }
+        const std::string hf_repo = split.at("value").at("repo").get<std::string>();
+        std::string hf_quant = split.at("value").at("tag").get<std::string>();
         if (hf_quant.empty() || hf_quant == "latest") {
             hf_quant = "Q4_K_M";
         }
