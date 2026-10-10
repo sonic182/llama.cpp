@@ -1,9 +1,10 @@
 #include "arg.h"
 #include "common.h"
-#include "imatrix-loader.h"
 #include "log.h"
 #include "llama.h"
 #include "gguf.h"
+
+#include "llama_quantize.h"
 
 #include <algorithm>
 #include <chrono>
@@ -18,12 +19,17 @@
 #include <fstream>
 #include <unordered_map>
 #include <map>
+#include <memory>
 #include <regex>
 #include <numeric>
 
 #if defined(_MSC_VER)
 #pragma warning(disable: 4244 4267) // possible loss of data
 #endif
+
+static constexpr const char * LLM_KV_IMATRIX_DATASETS    = "imatrix.datasets";
+static constexpr const char * LLM_KV_IMATRIX_CHUNK_COUNT = "imatrix.chunk_count";
+static constexpr const char * LLM_KV_IMATRIX_CHUNK_SIZE  = "imatrix.chunk_size";
 
 static void print_usage(int, char ** argv) {
     LOG("\nexample usage:\n");
@@ -639,26 +645,34 @@ void IMatrixCollector::save_imatrix(int32_t n_chunk) const {
     ggml_free(ctx);
 }
 
+static void log_imatrix_error(const char * message) {
+    LOG_ERR("%s", message);
+}
+
 bool IMatrixCollector::load_imatrix(const char * file_name) {
-    common_imatrix loaded;
-    if (!common_imatrix_load(file_name, loaded)) {
+    std::unique_ptr<llama_imatrix, decltype(&llama_imatrix_free)> loaded(
+        llama_imatrix_load(file_name, log_imatrix_error), llama_imatrix_free);
+    if (!loaded) {
         return false;
     }
+    const llama_imatrix_view view = llama_imatrix_get(loaded.get());
 
     const int32_t chunk_size = m_params.n_ctx / m_params.n_parallel;
-    const bool is_legacy = loaded.is_legacy;
+    const bool is_legacy = view.is_legacy;
 
-    for (auto & [name, entry] : loaded.entries) {
+    for (size_t i = 0; i < view.n_entries; ++i) {
+        const llama_imatrix_entry & entry = view.entries[i];
+        const std::string name = entry.name;
         auto & e = m_stats[name];
 
         if (is_legacy) {
             // Legacy format: sums contain (raw_sum/raw_count)*ncall, counts contain {ncall}
             // Reconstruct raw form by multiplying by chunk_size
             if (e.values.empty()) {
-                e.values.resize(entry.sums.size(), 0.0f);
+                e.values.resize(entry.n_sums, 0.0f);
                 e.counts.resize(1, 0);
             }
-            for (size_t j = 0; j < entry.sums.size(); ++j) {
+            for (size_t j = 0; j < entry.n_sums; ++j) {
                 e.values[j] += entry.sums[j] * chunk_size;
             }
             for (size_t j = 0; j < e.counts.size(); ++j) {
@@ -666,8 +680,8 @@ bool IMatrixCollector::load_imatrix(const char * file_name) {
             }
         } else {
             // GGUF format: raw sums and counts, accumulate directly
-            const int64_t nval    = entry.sums.size();
-            const int64_t ncounts = entry.counts.size();
+            const int64_t nval    = entry.n_sums;
+            const int64_t ncounts = entry.n_counts;
 
             if (e.values.empty()) {
                 e.values.resize(nval, 0.0f);
@@ -694,7 +708,7 @@ bool IMatrixCollector::load_imatrix(const char * file_name) {
         }
     }
 
-    m_datasets.insert(m_datasets.end(), loaded.datasets.begin(), loaded.datasets.end());
+    m_datasets.insert(m_datasets.end(), view.datasets, view.datasets + view.n_datasets);
 
     // Calculate the last chunk count
     int64_t max_count = 0;

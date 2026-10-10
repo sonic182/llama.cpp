@@ -2,7 +2,7 @@
 """Run llama-quantize over a fixed argument matrix and record or compare the results.
 
 The llama-imatrix next to the given binary also loads, converts and merges the
-imatrix fixtures, which covers common_imatrix_load and the Rust loader behind it.
+imatrix fixtures, which covers the Rust imatrix loader as tools/imatrix uses it.
 Only its exit code and output files are compared: llama-imatrix logs through the
 asynchronous common_log thread and sometimes loses its last lines at exit.
 
