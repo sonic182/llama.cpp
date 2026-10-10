@@ -21,6 +21,9 @@ add_custom_target(llama-rust ALL
         ${LLAMA_RUST_CARGO_FEATURES}
         ${LLAMA_RUST_CARGO_EXCLUDES}
         --manifest-path ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml
+    BYPRODUCTS
+        ${CMAKE_BINARY_DIR}/rust/${LLAMA_RUST_CARGO_PROFILE}/libllama_rs.a
+        ${CMAKE_BINARY_DIR}/rust/debug/libllama_rs.a
     COMMAND_EXPAND_LISTS
     USES_TERMINAL
     VERBATIM
