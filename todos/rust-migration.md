@@ -103,7 +103,7 @@ Order (from the phase 3 plan file), each piece with differential test C++ vs Rus
 - [-] 3.5 `peg-parser.cpp`, `chat-peg-parser.cpp`, `build_grammar`: skipped, stays in C++ (user decision).
 - [-] 3.6 chat cluster (`chat.cpp`, `chat-diff-analyzer.cpp`, `chat-auto-parser*`, `common/parsers/`): skipped, stays in C++ (user decision).
 - [x] 3.7 samplers: `reasoning-budget` and `llguidance` in Rust; `sampling.cpp` and `common_params_sampling` stay in C++ (user decision).
-  - [x] `reasoning-budget`: `rust/llama-sampling` (vtable, Aho-Corasick, UTF-8 check, trace sink); `common/reasoning-budget.cpp` (310 to 56 lines) forwards; `common_reasoning_budget_get_end_match` now returns `llama_tokens` by value. Oracle: `test-reasoning-budget` unchanged apart from that type; server pytest non-slow 376 passed, 4 skipped.
+  - [x] `reasoning-budget`: `rust/llama-sampling` (vtable, Aho-Corasick, UTF-8 check, trace sink); `common/reasoning-budget.cpp` (310 lines) is gone: `common/sampling.cpp` calls `llama_rs_reasoning_budget_*` directly, the state enum lives in `llama_sampling.h` and `common/log.cpp` installs the trace sink. Oracle: `test-reasoning-budget`, now on the C API through a flattening helper; server pytest non-slow 376 passed, 4 skipped.
   - [x] `llguidance`: `llama-sampling/src/llg.rs` behind the cargo feature `llama-rs/llguidance` (set by `LLAMA_LLGUIDANCE`), over the `llguidance` 1.0.1 crate; the `ExternalProject` clone and its separate static lib are gone, `common/llguidance.cpp` (260 to 22 lines) forwards. Oracle: `test-grammar-llguidance` passes.
   - [-] `sampling.cpp` (`common_sampler`): stays in C++ (user decision). It is the per-token path and mostly calls libllama, so a port brings no concrete gain.
 

@@ -102,8 +102,6 @@ add_library(${TARGET}
     peg-parser.h
     preset.cpp
     preset.h
-    reasoning-budget.cpp
-    reasoning-budget.h
     sampling.cpp
     sampling.h
     speculative.cpp
